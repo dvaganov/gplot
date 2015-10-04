@@ -192,6 +192,28 @@ public class Plot.Curve : Object
                 return true;
             });
         }
+        else if (coords[0,0] - radius_control_point < pointer[0] & pointer[0] < coords[0,0] + radius_control_point &
+                 coords[0,1] - radius_control_point < pointer[1] & pointer[1] < coords[0,1] + radius_control_point)
+        {
+            motion_handler_id = widget.motion_notify_event.connect ((motion_event) =>
+            {
+                coords[0,0] = motion_event.x - widget.margin;
+                coords[0,1] = motion_event.y - widget.margin;
+                widget.queue_draw ();
+                return true;
+            });
+        }
+        else if (coords[3,0] - radius_control_point < pointer[0] & pointer[0] < coords[3,0] + radius_control_point &
+                 coords[3,1] - radius_control_point < pointer[1] & pointer[1] < coords[3,1] + radius_control_point)
+        {
+            motion_handler_id = widget.motion_notify_event.connect ((motion_event) =>
+            {
+                coords[3,0] = motion_event.x - widget.margin;
+                coords[3,1] = motion_event.y - widget.margin;
+                widget.queue_draw ();
+                return true;
+            });
+        }
         else if (center[0] - radius_control_point < pointer[0] & pointer[0] < center[0] + radius_control_point &
                  center[1] - radius_control_point < pointer[1] & pointer[1] < center[1] + radius_control_point)
         {
@@ -229,8 +251,12 @@ public class Plot.Curve : Object
             cr.set_source_rgba (1, 0, 0, 0.5);
             cr.set_line_width (4);
             cr.set_dash ({mm, 0.5*mm}, 0);
-            cr.move_to (coords[0, 0], coords[0, 1]);
-        cr.curve_to (coords[1, 0], coords[1, 1], coords[2, 0], coords[2, 1], coords[3, 0], coords[3, 1]);
+            cr.move_to (coords[0,0], coords[0,1]);
+            cr.curve_to (coords[1,0], coords[1,1], coords[2,0], coords[2,1], coords[3,0], coords[3,1]);
+            cr.stroke ();
+            cr.arc (coords[0,0], coords[0,1], radius_control_point, 0, 2*Math.PI);
+            cr.stroke ();
+            cr.arc (coords[3,0], coords[3,1], radius_control_point, 0, 2*Math.PI);
             cr.stroke ();
             cr.restore ();
         }
@@ -260,6 +286,15 @@ public class Plot.Curve : Object
             cr.line_to (coords[2,0], coords[2,1]);
             cr.stroke ();
             cr.arc (coords[2, 0], coords[2, 1], 5, 0, 2*Math.PI);
+            cr.fill ();
+            cr.restore ();
+            
+            // Draw points
+            cr.save ();
+            cr.set_source_rgba (color.red, color.green, color.blue, color.alpha);
+            cr.arc (coords[0,0], coords[0,1], radius_control_point, 0, 2*Math.PI);
+            cr.fill ();
+            cr.arc (coords[3,0], coords[3,1], radius_control_point, 0, 2*Math.PI);
             cr.fill ();
             cr.restore ();
         }

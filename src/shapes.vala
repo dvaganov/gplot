@@ -4,20 +4,13 @@ namespace Plot {
 	private const short X = 0;
 	private const short Y = 1;
 	
-	public struct Coordinates {
-		private double x0;
-		private double y0;
-		private double x1;
-		private double y1;
-		private double x2;
-		private double y2;
-		private double x3;
-		private double y3;
-	}
-	
 	public abstract class Shapes : Object {
 		public abstract Gdk.RGBA color {get; set;}
 		public abstract void draw (Cairo.Context cr);
+		public virtual inline bool in_vicinity (double x0, double y0, double vicinity, double x1, double y1)
+		{
+			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
+		}
 	}
 
 	public class Axes : Shapes {
@@ -161,10 +154,11 @@ namespace Plot {
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			double pointer[2] = {event.x - widget.margin, event.y - widget.margin};
-			if (coords[1,0] - radius_control_point < pointer[0] &
-			    pointer[0] < coords[1,0] + radius_control_point &
-			    coords[1,1] - radius_control_point < pointer[1] &
-			    pointer[1] < coords[1,1] + radius_control_point) {
+			//if (coords[1,0] - radius_control_point < pointer[0] &
+			//    pointer[0] < coords[1,0] + radius_control_point &
+			//    coords[1,1] - radius_control_point < pointer[1] &
+			//    pointer[1] < coords[1,1] + radius_control_point) {
+			if (in_vicility (coords[1,X], coords[1,Y], radius_control_point, pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					coords[1,0] = motion_event.x - widget.margin;
 					coords[1,1] = motion_event.y - widget.margin;

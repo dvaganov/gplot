@@ -124,7 +124,8 @@ namespace Plot {
 
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0, blue = 0, alpha = 0.5};}
-		public double[,] coords {get; set; default = new double[4,2];}
+		//public double[,] coords {get; set; default = new double[4,2];}
+		public Data[] points {get; set; default = new Data[4];}
 		public ulong motion_handler_id {get; set;}
 
 		public Curve () {
@@ -133,43 +134,43 @@ namespace Plot {
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			double pointer[2] = {event.x - widget.margin, event.y - widget.margin};
-			if (in_vicinity (radius_control_point, coords[1,X], coords[1,Y], pointer[X], pointer[Y])) {
+			if (in_vicinity (radius_control_point, points[1].x, points[1].y, pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[1,X] = motion_event.x - widget.margin;
-					coords[1,Y] = motion_event.y - widget.margin;
+					points[1].x = motion_event.x - widget.margin;
+					points[1].y = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
-			} else if (in_vicinity (radius_control_point, coords[2,X], coords[2,Y], pointer[X], pointer[Y])) {
+			} else if (in_vicinity (radius_control_point, points[2].x, points[2].y, pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[2,X] = motion_event.x - widget.margin;
-					coords[2,Y] = motion_event.y - widget.margin;
+					points[2].x = motion_event.x - widget.margin;
+					points[2].y = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
 			}
-			else if (in_vicinity (radius_control_point, coords[0,X], coords[0,Y], pointer[X], pointer[Y])) {
+			else if (in_vicinity (radius_control_point, points[0].x, points[0].y, pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[0,X] = motion_event.x - widget.margin;
-					coords[0,Y] = motion_event.y - widget.margin;
+					points[0].x = motion_event.x - widget.margin;
+					points[0].y = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
-			} else if (in_vicinity (radius_control_point, coords[3,X], coords[3,Y], pointer[X], pointer[Y])) {
+			} else if (in_vicinity (radius_control_point, points[3].x, points[3].y, pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[3,X] = motion_event.x - widget.margin;
-					coords[3,Y] = motion_event.y - widget.margin;
+					points[3].x = motion_event.x - widget.margin;
+					points[3].y = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, center[X], center[Y], pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					double motion_pointer[2] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					for (int i = 0; i < 2; i++) {
-						for (int j = 0; j < 4; j++) {
-							coords[j,i] += motion_pointer[i] - center[i];
-						}
-						center[i] = 0.5*(coords[0,i] + coords[3,i]);
+					for (int i = 0; i < points.length; i++) {
+						points[i].x += motion_pointer[X] - center[X];
+						points[i].y += motion_pointer[Y] - center[Y];
+						center[X] = 0.5*(points[0].x + points[3].x);
+						center[Y] = 0.5*(points[0].y + points[3].y);
 					}
 					widget.queue_draw ();
 					return true;
@@ -184,18 +185,18 @@ namespace Plot {
 		}
 
 		public override void draw (Context cr) {
-			center = {0.5*(coords[0,X] + coords[3,X]), 0.5*(coords[0,Y] + coords[3,Y])};
+			center = {0.5*(points[0].x + points[3].x), 0.5*(points[0].y + points[3].y)};
 			if (is_selected) {
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, selection_color);
 				cr.set_line_width (4);
 				cr.set_dash ({mm, 0.5*mm}, 0);
-				cr.move_to (coords[0,X], coords[0,Y]);
-				cr.curve_to (coords[1,X], coords[1,Y], coords[2,X], coords[2,Y], coords[3,X], coords[3,Y]);
+				cr.move_to (points[0].x, points[0].y);
+				cr.curve_to (points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
 				cr.stroke ();
-				cr.arc (coords[0,X], coords[0,Y], radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[0].x, points[0].y, radius_control_point, 0, 2*Math.PI);
 				cr.stroke ();
-				cr.arc (coords[3,X], coords[3,Y], radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[3].x, points[3].y, radius_control_point, 0, 2*Math.PI);
 				cr.stroke ();
 				cr.restore ();
 			}
@@ -203,8 +204,8 @@ namespace Plot {
 			cr.save ();
 			Gdk.cairo_set_source_rgba (cr, color);
 			cr.set_line_width (2);
-			cr.move_to (coords[0,X], coords[0,Y]);
-			cr.curve_to (coords[1,X], coords[1,Y], coords[2,X], coords[2,Y], coords[3,X], coords[3,Y]);
+			cr.move_to (points[0].x, points[0].y);
+			cr.curve_to (points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
 			cr.stroke ();
 			cr.restore ();
 
@@ -213,26 +214,26 @@ namespace Plot {
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, selection_color);
 				cr.set_line_width (1);
-				cr.move_to (coords[0,X], coords[0,Y]);
-				cr.line_to (coords[1,X], coords[1,Y]);
+				cr.move_to (points[0].x, points[0].y);
+				cr.line_to (points[1].x, points[1].y);
 				cr.stroke ();
-				cr.arc (coords[1,X], coords[1,Y], radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[1].x, points[1].y, radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
 				cr.arc (center[X], center[Y], radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.move_to (coords[3,X], coords[3,Y]);
-				cr.line_to (coords[2,X], coords[2,Y]);
+				cr.move_to (points[3].x, points[3].y);
+				cr.line_to (points[2].x, points[2].y);
 				cr.stroke ();
-				cr.arc (coords[2,X], coords[2,Y], 5, 0, 2*Math.PI);
+				cr.arc (points[2].x, points[2].y, 5, 0, 2*Math.PI);
 				cr.fill ();
 				cr.restore ();
 
 				// Draw points
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, color);
-				cr.arc (coords[0,X], coords[0,Y], radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[0].x, points[0].y, radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.arc (coords[3,X], coords[3,Y], radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[3].x, points[3].y, radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
 				cr.restore ();
 			}
@@ -245,7 +246,6 @@ namespace Plot {
 			CIRCLE
 		}
 		public Form form {get; set; default = Form.SQUARE;}
-		//public double[,] points {get; set;}
 		public Array<Data?> points {get; set; default = new Array<Data?> ();}
 		public int size {get; set; default = mm;}
 		public Scatters () {

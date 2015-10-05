@@ -5,9 +5,9 @@ namespace Plot {
 	private const short Y = 1;
 	
 	public abstract class Shapes : Object {
-		//public abstract Gdk.RGBA color {get; set;}
+		public Gdk.RGBA color {get; set; default = Gdk.RGBA () {red = 0, green = 0, blue = 0, alpha = 0};}
 		public abstract void draw (Cairo.Context cr);
-		public virtual inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
+		public inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
 		{
 			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
 		}
@@ -20,7 +20,6 @@ namespace Plot {
 		}
 
 		private Type type;
-		private Gdk.RGBA color;
 
 		public double min {get; set; default = 0;}
 		public double max {get; set; default = 0;}
@@ -30,19 +29,12 @@ namespace Plot {
 
 		public Axes (Type type) {
 			this.type = type;
-			color.red = 0;
-			color.green = 0;
-			color.blue = 0;
-			color.alpha = 1;
-		}
-		public void set_color (Gdk.RGBA color) {
-			this.color.free ();
-			this.color = color;
+			color = {0,0,0,1};
 		}
 		public override void draw (Context cr) {
 			// Draw axes
 			cr.save ();
-			cr.set_source_rgba (color.red, color.green, color.blue, color.alpha);
+			Gdk.cairo_set_source_rgba (cr, color);
 			cr.set_line_width (1);
 			if (type == Type.X) {
 				cr.move_to (min, intersection);
@@ -69,8 +61,7 @@ namespace Plot {
 		}
 	}
 
-	public class Background : Object {
-		private Gdk.RGBA background_color;
+	public class Background : Shapes {
 		private Gdk.RGBA grid_color;
 
 		public double width {get; set; default = 0;}
@@ -79,33 +70,19 @@ namespace Plot {
 		public bool has_minor_grid {get; set; default = true;}
 
 		public Background () {
-			background_color.red = 1;
-			background_color.green = 1;
-			background_color.blue = 1;
-			background_color.alpha = 1;
-			grid_color.red = 0.5;
-			grid_color.green = 0.5;
-			grid_color.blue = 0.5;
-			grid_color.alpha = 1;
+			color = {1,1,1,1};
+			grid_color = {0.5, 0.5, 0.5, 1};
 		}
-		public void set_background_color (Gdk.RGBA color) {
-			this.background_color.free ();
-			this.background_color = color;
-		}
-		public void set_grid_color (Gdk.RGBA color) {
-			this.grid_color.free ();
-			this.grid_color = color;
-		}
-		public void draw (Context cr) {
+		public override void draw (Context cr) {
 			cr.save ();
-			cr.set_source_rgba (background_color.red, background_color.green, background_color.blue, background_color.alpha);
+			Gdk.cairo_set_source_rgba (cr, color);
 			cr.paint ();
 			cr.restore ();
 		}
 		public void draw_grid (Context cr) {
 			if (has_major_grid) {
 				cr.save ();
-				cr.set_source_rgba (grid_color.red, grid_color.green, grid_color.blue, grid_color.alpha);
+				Gdk.cairo_set_source_rgba (cr, grid_color);
 				cr.set_line_width (0.5);
 				for (int i = 0; i < width / cm + 1; i++) {
 					cr.move_to (i*cm, 0);
@@ -120,7 +97,7 @@ namespace Plot {
 			}
 			if (has_minor_grid) {
 				cr.save ();
-				cr.set_source_rgba (grid_color.red, grid_color.green, grid_color.blue, grid_color.alpha);
+				Gdk.cairo_set_source_rgba (cr, grid_color);
 				cr.set_line_width (0.1);
 				for (int i = 0; i < width / mm + 1; i++) {
 					cr.move_to (i*mm, 0);
@@ -137,20 +114,17 @@ namespace Plot {
 	}
 
 	public class Curve : Shapes {
-		private Gdk.RGBA color;
 		private int radius_control_point;
 		private double center[2];
-
-		public ulong motion_handler_id {get; set;}
+		
 		public bool is_selected {get; set; default = true;}
+		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0, blue = 0, alpha = 0.5};}
 		public double[,] coords {get; set; default = {{0,0}, {0,0}, {0,0}, {0,0}};}
+		public ulong motion_handler_id {get; set;}
 
 		public Curve () {
 			radius_control_point = 5;
-			color.red = 0;
-			color.green = 0;
-			color.blue = 0;
-			color.alpha = 1;
+			color = {0,0,0,1};
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			double pointer[2] = {event.x - widget.margin, event.y - widget.margin};
@@ -205,55 +179,55 @@ namespace Plot {
 		}
 
 		public override void draw (Context cr) {
-			center = {0.5*(coords[0,0] + coords[3,0]), 0.5*(coords[0,1] + coords[3,1])};
+			center = {0.5*(coords[0,X] + coords[3,X]), 0.5*(coords[0,Y] + coords[3,Y])};
 			if (is_selected) {
 				cr.save ();
-				cr.set_source_rgba (1, 0, 0, 0.5);
+				Gdk.cairo_set_source_rgba (cr, selection_color);
 				cr.set_line_width (4);
 				cr.set_dash ({mm, 0.5*mm}, 0);
-				cr.move_to (coords[0,0], coords[0,1]);
-				cr.curve_to (coords[1,0], coords[1,1], coords[2,0], coords[2,1], coords[3,0], coords[3,1]);
+				cr.move_to (coords[0,X], coords[0,Y]);
+				cr.curve_to (coords[1,X], coords[1,Y], coords[2,X], coords[2,Y], coords[3,X], coords[3,Y]);
 				cr.stroke ();
-				cr.arc (coords[0,0], coords[0,1], radius_control_point, 0, 2*Math.PI);
+				cr.arc (coords[0,X], coords[0,Y], radius_control_point, 0, 2*Math.PI);
 				cr.stroke ();
-				cr.arc (coords[3,0], coords[3,1], radius_control_point, 0, 2*Math.PI);
+				cr.arc (coords[3,X], coords[3,Y], radius_control_point, 0, 2*Math.PI);
 				cr.stroke ();
 				cr.restore ();
 			}
 			// Draw curve
 			cr.save ();
-			cr.set_source_rgba (color.red, color.green, color.blue, color.alpha);
+			Gdk.cairo_set_source_rgba (cr, color);
 			cr.set_line_width (2);
-			cr.move_to (coords[0, 0], coords[0, 1]);
-			cr.curve_to (coords[1, 0], coords[1, 1], coords[2, 0], coords[2, 1], coords[3, 0], coords[3, 1]);
+			cr.move_to (coords[0,X], coords[0,Y]);
+			cr.curve_to (coords[1,X], coords[1,Y], coords[2,X], coords[2,Y], coords[3,X], coords[3,Y]);
 			cr.stroke ();
 			cr.restore ();
 
 			if (is_selected) {
 				// Draw controls
 				cr.save ();
-				cr.set_source_rgba (1, 0, 0, 0.5);
+				Gdk.cairo_set_source_rgba (cr, selection_color);
 				cr.set_line_width (1);
-				cr.move_to (coords[0,0], coords[0,1]);
-				cr.line_to (coords[1,0], coords[1,1]);
+				cr.move_to (coords[0,X], coords[0,Y]);
+				cr.line_to (coords[1,X], coords[1,Y]);
 				cr.stroke ();
-				cr.arc (coords[1, 0], coords[1, 1], radius_control_point, 0, 2*Math.PI);
+				cr.arc (coords[1,X], coords[1,Y], radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.arc (center[0], center[1], radius_control_point, 0, 2*Math.PI);
+				cr.arc (center[X], center[Y], radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.move_to (coords[3,0], coords[3,1]);
-				cr.line_to (coords[2,0], coords[2,1]);
+				cr.move_to (coords[3,X], coords[3,Y]);
+				cr.line_to (coords[2,X], coords[2,Y]);
 				cr.stroke ();
-				cr.arc (coords[2, 0], coords[2, 1], 5, 0, 2*Math.PI);
+				cr.arc (coords[2,X], coords[2,Y], 5, 0, 2*Math.PI);
 				cr.fill ();
 				cr.restore ();
 
 				// Draw points
 				cr.save ();
-				cr.set_source_rgba (color.red, color.green, color.blue, color.alpha);
-				cr.arc (coords[0,0], coords[0,1], radius_control_point, 0, 2*Math.PI);
+				Gdk.cairo_set_source_rgba (cr, color);
+				cr.arc (coords[0,X], coords[0,Y], radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.arc (coords[3,0], coords[3,1], radius_control_point, 0, 2*Math.PI);
+				cr.arc (coords[3,X], coords[3,Y], radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
 				cr.restore ();
 			}

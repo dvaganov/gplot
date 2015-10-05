@@ -4,4 +4,4 @@ PKG = --pkg gtk+-3.0
 all: gplot
 
 gplot: $(SRC)
-  valac $(PKG) -o gplot $(SRC)
+	valac $(PKG) -o gplot $(SRC)

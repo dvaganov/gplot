@@ -234,12 +234,12 @@ namespace Plot {
 		}
 	}
 	public class Scatters : Shapes {
-		public enum Type {
+		public enum Form {
 			NONE,
 			SQUARE,
 			CIRCLE
 		}
-		public Type type {get; set; default = Type.SQUARE;}
+		public Form form {get; set; default = Form.SQUARE;}
 		public double[,] points {get; set; default = new double[1,2];}
 		public int size {get; set; default = mm;}
 		public Scatters () {
@@ -248,8 +248,8 @@ namespace Plot {
 		public override void draw (Context cr) {
 			cr.save ();
 			Gdk.cairo_set_source_rgba (cr, color);
-			switch (type) {
-				case Type.SQUARE:
+			switch (form) {
+				case Form.SQUARE:
 					for (int i = 0; i < points.length[0]; i++) {
 						cr.move_to (points[i,X] - 0.5*size, points[i,Y] - 0.5*size);
 						cr.rel_line_to (size, 0);

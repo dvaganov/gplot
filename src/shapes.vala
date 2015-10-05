@@ -5,9 +5,9 @@ namespace Plot {
 	private const short Y = 1;
 	
 	public abstract class Shapes : Object {
-		public abstract Gdk.RGBA color {get; set;}
+		//public abstract Gdk.RGBA color {get; set;}
 		public abstract void draw (Cairo.Context cr);
-		public virtual inline bool in_vicinity (double x0, double y0, double vicinity, double x1, double y1)
+		public virtual inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
 		{
 			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
 		}
@@ -154,61 +154,43 @@ namespace Plot {
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			double pointer[2] = {event.x - widget.margin, event.y - widget.margin};
-			//if (coords[1,0] - radius_control_point < pointer[0] &
-			//    pointer[0] < coords[1,0] + radius_control_point &
-			//    coords[1,1] - radius_control_point < pointer[1] &
-			//    pointer[1] < coords[1,1] + radius_control_point) {
-			if (in_vicility (coords[1,X], coords[1,Y], radius_control_point, pointer[X], pointer[Y])) {
+			if (in_vicinity (radius_control_point, coords[1,X], coords[1,Y], pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[1,0] = motion_event.x - widget.margin;
-					coords[1,1] = motion_event.y - widget.margin;
+					coords[1,X] = motion_event.x - widget.margin;
+					coords[1,Y] = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
-			} else if (coords[2,0] - radius_control_point < pointer[0] &
-			           pointer[0] < coords[2,0] + radius_control_point &
-			           coords[2,1] - radius_control_point < pointer[1] &
-			           pointer[1] < coords[2,1] + radius_control_point) {
+			} else if (in_vicinity (radius_control_point, coords[2,X], coords[2,Y], pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[2,0] = motion_event.x - widget.margin;
-					coords[2,1] = motion_event.y - widget.margin;
+					coords[2,X] = motion_event.x - widget.margin;
+					coords[2,Y] = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
 			}
-			else if (coords[0,0] - radius_control_point < pointer[0] &
-			         pointer[0] < coords[0,0] + radius_control_point &
-			         coords[0,1] - radius_control_point < pointer[1] &
-			         pointer[1] < coords[0,1] + radius_control_point) {
+			else if (in_vicinity (radius_control_point, coords[0,X], coords[0,Y], pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[0,0] = motion_event.x - widget.margin;
-					coords[0,1] = motion_event.y - widget.margin;
+					coords[0,X] = motion_event.x - widget.margin;
+					coords[0,Y] = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
-			} else if (coords[3,0] - radius_control_point < pointer[0] &
-			           pointer[0] < coords[3,0] + radius_control_point &
-			           coords[3,1] - radius_control_point < pointer[1] &
-			           pointer[1] < coords[3,1] + radius_control_point) {
+			} else if (in_vicinity (radius_control_point, coords[3,X], coords[3,Y], pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					coords[3,0] = motion_event.x - widget.margin;
-					coords[3,1] = motion_event.y - widget.margin;
+					coords[3,X] = motion_event.x - widget.margin;
+					coords[3,Y] = motion_event.y - widget.margin;
 					widget.queue_draw ();
 					return true;
 				});
-			} else if (center[0] - radius_control_point < pointer[0] &
-			           pointer[0] < center[0] + radius_control_point &
-			           center[1] - radius_control_point < pointer[1] &
-			           pointer[1] < center[1] + radius_control_point) {
+			} else if (in_vicinity (radius_control_point, center[X], center[Y], pointer[X], pointer[Y])) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					double motion_pointer[2] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					for (int i = 0; i < 2; i++)
-					{
-					for (int j = 0; j < 4; j++)
-					{
-					coords[j,i] += motion_pointer[i] - center[i];
-					}
-					center[i] = 0.5*(coords[0,0] + coords[3,0]);
+					for (int i = 0; i < 2; i++) {
+						for (int j = 0; j < 4; j++) {
+							coords[j,i] += motion_pointer[i] - center[i];
+						}
+						center[i] = 0.5*(coords[0,i] + coords[3,i]);
 					}
 					widget.queue_draw ();
 					return true;

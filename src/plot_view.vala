@@ -4,7 +4,7 @@ namespace Plot {
 	const int mm = 10;
 	const int cm = 100;
 
-	public class Plot.PlotView : Gtk.DrawingArea {
+	public class PlotView : Gtk.DrawingArea {
 		public double width {get; set; default = 6*cm;}
 		public double height {get; set; default = 6*cm;}
 		public double padding {get; set; default = mm;}
@@ -47,7 +47,10 @@ namespace Plot {
 			axes_y.intersection = 0.5*width;
 
 			curve1 = new Curve ();
-			curve1.coords = {{5*cm, 5*cm}, {5*cm, 2*cm}, {3*cm, 5*cm}, {7*cm, 4*cm}};
+			curve1.points[0] = {5*cm, 5*cm};
+			curve1.points[1] = {5*cm, 2*cm};
+			curve1.points[2] = {3*cm, 5*cm};
+			curve1.points[3] = {7*cm, 4*cm};
 
 			var scatters = new Scatters ();
 			scatters.points.append_val ({1*cm, 1*cm});

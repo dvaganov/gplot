@@ -1,7 +1,22 @@
 using Cairo;
 
 namespace Plot {
+	private const short X = 0;
+	private const short Y = 1;
+	
+	public struct Coordinates {
+		private double x0;
+		private double y0;
+		private double x1;
+		private double y1;
+		private double x2;
+		private double y2;
+		private double x3;
+		private double y3;
+	}
+	
 	public abstract class Shapes : Object {
+		public abstract Gdk.RGBA color {get; set;}
 		public abstract void draw (Cairo.Context cr);
 	}
 

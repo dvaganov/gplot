@@ -116,7 +116,7 @@ namespace Plot {
 	public class Curve : Shapes {
 		private int radius_control_point;
 		private double center[2];
-		
+
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0, blue = 0, alpha = 0.5};}
 		public double[,] coords {get; set; default = new double[4,2];}
@@ -239,13 +239,13 @@ namespace Plot {
 			SQUARE,
 			CIRCLE
 		}
-		public Type type = {get; set; default = Type.SQUARE;}
-		public double[,] points = {get; set; default = new double[1,2];}
-		public int size = {get; set; default = mm;}
+		public Type type {get; set; default = Type.SQUARE;}
+		public double[,] points {get; set; default = new double[1,2];}
+		public int size {get; set; default = mm;}
 		public Scatters () {
 			color = {0,1,0,1};
 		}
-		public override draw (Context cr) {
+		public override void draw (Context cr) {
 			cr.save ();
 			Gdk.cairo_set_source_rgba (cr, color);
 			switch (type) {

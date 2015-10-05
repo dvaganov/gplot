@@ -13,6 +13,11 @@ namespace Plot {
 		}
 	}
 
+	public struct Data {
+		public double x;
+		public double y;
+	}
+
 	public class Axes : Shapes {
 		public enum Type {
 			X,
@@ -240,7 +245,8 @@ namespace Plot {
 			CIRCLE
 		}
 		public Form form {get; set; default = Form.SQUARE;}
-		public double[,] points {get; set; default = new double[1,2];}
+		//public double[,] points {get; set;}
+		public Array<Data?> points {get; set; default = new Array<Data?> ();}
 		public int size {get; set; default = mm;}
 		public Scatters () {
 			color = {0,1,0,1};
@@ -250,8 +256,8 @@ namespace Plot {
 			Gdk.cairo_set_source_rgba (cr, color);
 			switch (form) {
 				case Form.SQUARE:
-					for (int i = 0; i < points.length[0]; i++) {
-						cr.move_to (points[i,X] - 0.5*size, points[i,Y] - 0.5*size);
+					for (int i = 0; i < points.length; i++) {
+						cr.move_to (points.index(i).x - 0.5*size, points.index(i).y - 0.5*size);
 						cr.rel_line_to (size, 0);
 						cr.rel_line_to (0, size);
 						cr.rel_line_to (-size, 0);

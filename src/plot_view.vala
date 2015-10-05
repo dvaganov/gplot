@@ -10,8 +10,7 @@ namespace Plot {
 		public double padding {get; set; default = mm;}
 
 		public Background bkg;
-		public Axes axes_x;
-		public Axes axes_y;
+		public Axes axes;
 		public Curve curve1;
 
 		public PlotView () {
@@ -35,16 +34,7 @@ namespace Plot {
 			bkg.width = width;
 			bkg.height = height;
 
-			axes_x = new Axes (Axes.Type.X);
-			axes_x.min = padding;
-			axes_x.max = width - padding;
-			axes_x.intersection = 0.5*height;
-			axes_x.major_tick = 5;
-
-			axes_y = new Axes (Axes.Type.Y);
-			axes_y.min = padding;
-			axes_y.max = height - padding;
-			axes_y.intersection = 0.5*width;
+			axes = new Axes (width, height);
 
 			curve1 = new Curve ();
 			curve1.points[0] = {5*cm, 5*cm};
@@ -67,8 +57,8 @@ namespace Plot {
 				bkg.draw_grid (context);
 
 				// Draw axes
-				axes_x.draw (context);
-				axes_y.draw (context);
+				axes.draw (context);
+				axes.major_tick = 4;
 
 				curve1.draw (context);
 

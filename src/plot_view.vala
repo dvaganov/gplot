@@ -55,6 +55,9 @@ public class Plot.PlotView : Gtk.DrawingArea
         curve1 = new Curve ();
         curve1.coords = {{5*cm, 5*cm}, {5*cm, 2*cm}, {3*cm, 5*cm}, {7*cm, 4*cm}};
         
+        var scatters = new Scatters ();
+        scatters.points = {1*cm, 1*cm};
+        
         draw.connect ((context) => {
         //FIXME: Not drawn if nothing changes
             // Create border
@@ -69,6 +72,8 @@ public class Plot.PlotView : Gtk.DrawingArea
             axes_y.draw (context);
             
             curve1.draw (context);
+            
+            scatters.draw (context);
             
             return true;
         });

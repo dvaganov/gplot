@@ -119,7 +119,7 @@ namespace Plot {
 		
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0, blue = 0, alpha = 0.5};}
-		public double[,] coords {get; set; default = {{0,0}, {0,0}, {0,0}, {0,0}};}
+		public double[,] coords {get; set; default = new double[4,2];}
 		public ulong motion_handler_id {get; set;}
 
 		public Curve () {

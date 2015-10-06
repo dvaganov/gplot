@@ -19,7 +19,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		scroll.expand = true;
 		grid.attach (scroll, 0,0);
 		
-		plot_view = new PlotView ();
+		plot_view = new View ();
 		scroll.add (plot_view);
 	}
 }

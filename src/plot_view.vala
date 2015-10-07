@@ -9,7 +9,7 @@ namespace Plot {
 	const ushort RIGHT = 2;
 	const ushort TOP = 3;
 
-	public class PlotView : Gtk.DrawingArea {
+	public class View : Gtk.DrawingArea {
 		public double width {get; set; default = 6*cm;}
 		public double height {get; set; default = 6*cm;}
 		public double padding {get; set; default = mm;}
@@ -18,7 +18,7 @@ namespace Plot {
 		public Axes[] axes;
 		public Curve curve1;
 
-		public PlotView () {
+		public View () {
 			margin = mm;
 			width_request = (int) (width + 2*margin);
 			height_request = (int) (height + 2*margin);

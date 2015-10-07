@@ -13,8 +13,15 @@ public class Plot.Window : Gtk.ApplicationWindow {
 			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.SAVE, null);
 			chooser.add_button ("_Cancel", Gtk.ResponseType.CANCEL);
 			chooser.add_button ("_Save", Gtk.ResponseType.ACCEPT).get_style_context ().add_class ("suggested-action");
+			var filter = new Gtk.FileFilter ();
+			filter.set_filter_name ("gplot projects");
+			filter.add_pattern ("*.gpj");
+			chooser.add_filter (filter);
 			if (chooser.run () == Gtk.ResponseType.ACCEPT) {
 				var filename = chooser.get_filename ();
+				if (!filename.has_suffix (".gpj")) {
+					filename += ".gpj";
+				}
 				KeyFile file = new KeyFile ();
 				file.set_list_separator ('=');
 				plot_view.save_to_file (file);
@@ -23,7 +30,6 @@ public class Plot.Window : Gtk.ApplicationWindow {
 				} catch (FileError err) {
 					print (err.message);
 				}
-				//print (plot_view.axes[0].save ());
 			}
 			chooser.close ();
 		});

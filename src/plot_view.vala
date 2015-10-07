@@ -58,13 +58,13 @@ namespace Plot {
 				axes[i].minor_tick = 5;
 			}
 
-			curve1 = new Curve ();
+			curve1 = new Curve (1);
 			curve1.points[0] = {5*cm, 5*cm};
 			curve1.points[1] = {5*cm, 2*cm};
 			curve1.points[2] = {3*cm, 5*cm};
 			curve1.points[3] = {7*cm, 4*cm};
 
-			scatters = new Scatters ();
+			scatters = new Scatters (0);
 			scatters.points.append_val ({1*cm, 1*cm});
 			scatters.points.append_val ({2*cm, 2*cm});
 			scatters.points.append_val ({3*cm, 3*cm});
@@ -103,6 +103,18 @@ namespace Plot {
 			var svg_surface = new Cairo.SvgSurface (filename, width + 2*margin, height + 2*margin);
 			var export_context = new Cairo.Context (svg_surface);
 			draw_in_context (export_context);
+		}
+		public void save_to_file (KeyFile file) {
+			string group_name = "View";
+			file.set_double (group_name, "width", width);
+			file.set_double (group_name, "height", height);
+			file.set_double (group_name, "padding", padding);
+			bkg.save_to_file (file);
+			for (var i = 0; i < axes.length; i++) {
+				axes[i].save_to_file (file);
+			}
+			scatters.save_to_file (file);
+			curve1.save_to_file (file);
 		}
 	}
 }

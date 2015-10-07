@@ -4,11 +4,20 @@ namespace Plot {
 	public struct Point {
 		public double x;
 		public double y;
+		public string to_string () {
+			return x.to_string () + ";" + y.to_string ();
+		}
+		public Point.from_string (string str) {
+			var array = str.split (";");
+			x = double.parse (array[0]);
+			y = double.parse (array[1]);
+		}
 	}
 
 	public abstract class Shapes : Object {
 		public Gdk.RGBA color {get; set; default = Gdk.RGBA () {red = 0, green = 0, blue = 0, alpha = 0};}
 		public abstract void draw (Cairo.Context cr);
+		public abstract void save_to_file (KeyFile file);
 		public inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
 		{
 			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
@@ -34,7 +43,7 @@ namespace Plot {
 		public bool visible {get; set; default = true;}
 		public double position {get; set; default = 0;}
 		public double zero_point {get; set;}
-		public string caption {get; set;}
+		public string caption {get; set; default = "";}
 		// Ticks parameters
 		public TickType tick_type {get; set; default = TickType.IN;}
 		public ushort major_tick {get; set; default = 2;}
@@ -136,11 +145,26 @@ namespace Plot {
 			cr.stroke ();
 			cr.restore ();
 		}
+		public override void save_to_file (KeyFile file) {
+			string group_name = "Axes " + ((int) orientation).to_string ();
+			file.set_string (group_name, "color", color.to_string ());
+			file.set_boolean (group_name, "visible", visible);
+			// Axes parameters
+			file.set_double (group_name, "length", length);
+			file.set_double (group_name, "position", position);
+			file.set_double (group_name, "zero_point", zero_point);
+			file.set_string (group_name, "caption", caption);
+			// Ticks parameters
+			file.set_integer (group_name, "tick_type", ((int) tick_type));
+			file.set_integer (group_name, "major_tick", major_tick);
+			file.set_double (group_name, "major_tick_size", major_tick_size);
+			file.set_integer (group_name, "minor_tick", major_tick);
+			file.set_double (group_name, "minor_tick_size", major_tick_size);
+		}
 	}
 
 	public class Background : Shapes {
-		private Gdk.RGBA grid_color;
-
+		public Gdk.RGBA grid_color {get; set;}
 		public double width {get; set; default = 0;}
 		public double height {get; set; default = 0;}
 		public bool has_major_grid {get; set; default = true;}
@@ -188,51 +212,62 @@ namespace Plot {
 				cr.restore ();
 			}
 		}
+		public override void save_to_file (KeyFile file) {
+			string group_name = "Background";
+			file.set_string (group_name, "color", color.to_string ());
+			file.set_string (group_name, "grid_color", grid_color.to_string ());
+			file.set_double (group_name, "width", width);
+			file.set_double (group_name, "height", height);
+			file.set_boolean (group_name, "has_major_grid", has_major_grid);
+			file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
+		}
 	}
 
 	public class Curve : Shapes {
 		private int radius_control_point;
 		private Point center;
+		private ulong motion_handler_id;
 		private inline void calc_center () {center = {0.5*(points[0].x + points[3].x), 0.5*(points[0].y + points[3].y)};}
 
+		public uint id {get; private set;}
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0.5, blue = 0.5, alpha = 1};}
 		public Point[] points {get; set; default = new Point[4];}
-		public ulong motion_handler_id {get; set;}
 
-		public Curve () {
+		public Curve (uint id) {
+			this.id = id;
 			radius_control_point = 5;
 			color = {0,0,0,1};
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			Point pointer = {event.x - widget.margin, event.y - widget.margin};
 			if (in_vicinity (radius_control_point, points[1].x, points[1].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[1] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, points[2].x, points[2].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[2] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			}
 			else if (in_vicinity (radius_control_point, points[0].x, points[0].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[0] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, points[3].x, points[3].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[3] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, center.x, center.y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					Point motion_pointer = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					double dx, dy;
 					for (int i = 0; i < points.length; i++) {
@@ -307,6 +342,17 @@ namespace Plot {
 				cr.restore ();
 			}
 		}
+		public override void save_to_file (KeyFile file) {
+			string group_name = "Curve " + id.to_string ();
+			string points_list[4];
+			for (int i = 0; i < points.length; i++) {
+				points_list[i] = points[i].to_string ();
+			}
+			file.set_string (group_name, "color", color.to_string ());
+			file.set_boolean (group_name, "is_selected", is_selected);
+			file.set_string (group_name, "selection_color", selection_color.to_string ());
+			file.set_string_list (group_name, "points", points_list);
+		}
 	}
 	public class Scatters : Shapes {
 		public enum Form {
@@ -314,10 +360,13 @@ namespace Plot {
 			SQUARE,
 			CIRCLE
 		}
+		public uint id {get; private set;}
 		public Form form {get; set; default = Form.SQUARE;}
-		public Array<Point?> points {get; set; default = new Array<Point?> ();}
 		public double size {get; set; default = mm;}
-		public Scatters () {
+		public Array<Point?> points {get; set; default = new Array<Point?> ();}
+		
+		public Scatters (uint id) {
+			this.id = id;
 			color = {0,1,0,1};
 		}
 		public override void draw (Context cr) {
@@ -336,6 +385,17 @@ namespace Plot {
 			}
 			cr.fill ();
 			cr.restore ();
+		}
+		public override void save_to_file (KeyFile file) {
+			string group_name = "Scatters " + id.to_string ();
+			string[] points_list = new string[points.length];
+			for (int i = 0; i < points.length; i++) {
+				points_list[i] = points.index(i).to_string ();
+			}
+			file.set_integer (group_name, "form", (int) form);
+			file.set_string (group_name, "color", color.to_string ());
+			file.set_double (group_name, "size", size);
+			file.set_string_list (group_name, "points", points_list);
 		}
 	}
 }

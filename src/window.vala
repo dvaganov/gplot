@@ -7,7 +7,35 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		var grid = new Grid ();
 		add (grid);
 
-		var button = new Button.with_label ("Save as");
+		var button2 = new Button.with_label ("Save");
+		button2.halign = Align.CENTER;
+		button2.clicked.connect (() => {
+			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.SAVE, null);
+			chooser.add_button ("_Cancel", Gtk.ResponseType.CANCEL);
+			chooser.add_button ("_Save", Gtk.ResponseType.ACCEPT).get_style_context ().add_class ("suggested-action");
+			var filter = new Gtk.FileFilter ();
+			filter.set_filter_name ("gplot projects");
+			filter.add_pattern ("*.gpj");
+			chooser.add_filter (filter);
+			if (chooser.run () == Gtk.ResponseType.ACCEPT) {
+				var filename = chooser.get_filename ();
+				if (!filename.has_suffix (".gpj")) {
+					filename += ".gpj";
+				}
+				KeyFile file = new KeyFile ();
+				file.set_list_separator ('=');
+				plot_view.save_to_file (file);
+				try {
+					file.save_to_file (filename);
+				} catch (FileError err) {
+					print (err.message);
+				}
+			}
+			chooser.close ();
+		});
+		grid.attach (button2, 0,0);
+
+		var button = new Button.with_label ("Export");
 		button.halign = Align.CENTER;
 		button.clicked.connect (() => {
 			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.SAVE, null);
@@ -23,11 +51,11 @@ public class Plot.Window : Gtk.ApplicationWindow {
 			}
 			chooser.close ();
 		});
-		grid.attach (button, 0,0);
+		grid.attach (button, 1,0);
 
 		var scroll = new ScrolledWindow (null, null);
 		scroll.expand = true;
-		grid.attach (scroll, 0,1);
+		grid.attach (scroll, 0,1,2);
 
 		plot_view = new View ();
 		scroll.add (plot_view);

@@ -69,26 +69,34 @@ namespace Plot {
 			scatters.points.append_val ({3*cm, 3*cm});
 
 			draw.connect ((context) => {
-				//FIXME: Not drawn if nothing changes
-				// Create border
-				context.translate (margin, margin);
-
-				// Draw a paper:
-				bkg.draw (context);
-				bkg.draw_grid (context);
-
-				// Draw axes
-				for (int i = 0; i < axes.length; i++) {
-					axes[i].draw (context);
-				}
-				curve1.draw (context);
-
-				scatters.draw (context);
-
+				draw_in_context (context);
 				return true;
 			});
 
 			queue_draw ();
+		}
+		private void draw_in_context (Cairo.Context context) {
+			//FIXME: Not drawn if nothing changes
+			// Create border
+			context.translate (margin, margin);
+
+			// Draw a paper:
+			bkg.draw (context);
+			bkg.draw_grid (context);
+
+			// Draw axes
+			for (int i = 0; i < axes.length; i++) {
+				axes[i].draw (context);
+			}
+			curve1.draw (context);
+
+			scatters.draw (context);
+		}
+		public bool export_to_eps (string filename) {
+			var ps_surface = new Cairo.PsSurface (filename, width, height);
+			ps_surface.set_eps (true);
+			var export_context = ps_surface.get_content ();
+			draw_in_context (export_context);
 		}
 	}
 }

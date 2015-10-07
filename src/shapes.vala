@@ -4,11 +4,20 @@ namespace Plot {
 	public struct Point {
 		public double x;
 		public double y;
+		public string to_string () {
+			return x.to_string () + ";" + y.to_string ();
+		}
+		public Point.from_string (string str) {
+			var array = str.split (";");
+			x = double.parse (array[0]);
+			y = double.parse (array[1]);
+		}
 	}
 
 	public abstract class Shapes : Object {
 		public Gdk.RGBA color {get; set; default = Gdk.RGBA () {red = 0, green = 0, blue = 0, alpha = 0};}
 		public abstract void draw (Cairo.Context cr);
+		//public abstract string save ();
 		public inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
 		{
 			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
@@ -136,6 +145,28 @@ namespace Plot {
 			cr.stroke ();
 			cr.restore ();
 		}
+		public string save () {
+			string buffer = "";
+			// Class name
+			buffer += "{\n";
+			buffer += "class : Axes\n";
+			// Axes parameters
+			buffer += "orientation : " + ((int) orientation).to_string () + "\n";
+			buffer += "length : " + length.to_string () + "\n";
+			buffer += "visible : " + visible.to_string () + "\n";
+			buffer += "position : " + position.to_string () + "\n";
+			buffer += "zero_point : " + zero_point.to_string () + "\n";
+			buffer += "length : " + length.to_string () + "\n";
+			buffer += "caption : " + caption + "\n";
+			// Ticks parameters
+			buffer += "tick_type : " + ((int) tick_type).to_string () + "\n";
+			buffer += "major_tick : " + major_tick.to_string () + "\n";
+			buffer += "major_tick_size : " + major_tick_size.to_string () + "\n";
+			buffer += "minor_tick : " + minor_tick.to_string () + "\n";
+			buffer += "minor_tick_size : " + minor_tick_size.to_string () + "\n";
+			buffer += "}\n";
+			return buffer;
+		}
 	}
 
 	public class Background : Shapes {
@@ -193,46 +224,48 @@ namespace Plot {
 	public class Curve : Shapes {
 		private int radius_control_point;
 		private Point center;
+		private ulong motion_handler_id;
 		private inline void calc_center () {center = {0.5*(points[0].x + points[3].x), 0.5*(points[0].y + points[3].y)};}
 
+		public uint id {get; private set;}
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0.5, blue = 0.5, alpha = 1};}
 		public Point[] points {get; set; default = new Point[4];}
-		public ulong motion_handler_id {get; set;}
 
-		public Curve () {
+		public Curve (uint id) {
+			this.id = id;
 			radius_control_point = 5;
 			color = {0,0,0,1};
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			Point pointer = {event.x - widget.margin, event.y - widget.margin};
 			if (in_vicinity (radius_control_point, points[1].x, points[1].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[1] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, points[2].x, points[2].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[2] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			}
 			else if (in_vicinity (radius_control_point, points[0].x, points[0].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[0] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, points[3].x, points[3].y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					points[3] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					widget.queue_draw ();
 					return true;
 				});
 			} else if (in_vicinity (radius_control_point, center.x, center.y, pointer.x, pointer.y)) {
-				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
+					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 					Point motion_pointer = {motion_event.x - widget.margin, motion_event.y - widget.margin};
 					double dx, dy;
 					for (int i = 0; i < points.length; i++) {
@@ -306,6 +339,17 @@ namespace Plot {
 				cr.fill ();
 				cr.restore ();
 			}
+		}
+		public void save_to_file (KeyFile file) {
+			string group_name = "Curve" + id.to_string ();
+			file.set_string (group_name, "color", color.to_string ());
+			file.set_boolean (group_name, "is_selected", is_selected);
+			file.set_string (group_name, "selection_color", selection_color.to_string ());
+			string points_list[4];
+			for (int i = 0; i < points.length; i++) {
+				points_list[i] = points[i].to_string ();
+			}
+			file.set_string_list (group_name, "points", points_list);
 		}
 	}
 	public class Scatters : Shapes {

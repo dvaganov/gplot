@@ -52,28 +52,9 @@ namespace Plot {
 			Gdk.cairo_set_source_rgba (cr, color);
 			cr.set_line_width (1);
 			// Draw ticks
-			draw_ticks (cr, minor_tick, minor_tick_size, length / (major_tick - 1));
-			//draw_ticks (cr, major_tick, major_tick_size, length);
-			// Draw axes
-			switch (orientation) {
-				case Orientation.BOTTOM:
-				case Orientation.TOP:
-					cr.move_to (0, position);
-					cr.rel_line_to (length, 0);
-					break;
-				case Orientation.LEFT:
-				case Orientation.RIGHT:
-					cr.move_to (position, 0);
-					cr.rel_line_to (0, length);
-					break;
-			}
-			cr.stroke ();
-			cr.restore ();
-		}
-		private void draw_ticks (Cairo.Context cr, double ticks, double tick_size_old, double interval) {
-			double tick_size = major_tick_size;
 			double tick_amount = major_tick + minor_tick * (major_tick - 1);
 			double tick_interval = length / (tick_amount - 1);
+			double tick_size = major_tick_size;
 			for (var i = 0; i < tick_amount; i++) {
 				if (i % (1 + minor_tick) == 0) {
 					tick_size = major_tick_size;
@@ -139,6 +120,21 @@ namespace Plot {
 					break;
 				}
 			}
+			// Draw axes
+			switch (orientation) {
+				case Orientation.BOTTOM:
+				case Orientation.TOP:
+					cr.move_to (0, position);
+					cr.rel_line_to (length, 0);
+					break;
+				case Orientation.LEFT:
+				case Orientation.RIGHT:
+					cr.move_to (position, 0);
+					cr.rel_line_to (0, length);
+					break;
+			}
+			cr.stroke ();
+			cr.restore ();
 		}
 	}
 

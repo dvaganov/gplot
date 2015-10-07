@@ -316,7 +316,7 @@ namespace Plot {
 		}
 		public Form form {get; set; default = Form.SQUARE;}
 		public Array<Point?> points {get; set; default = new Array<Point?> ();}
-		public int size {get; set; default = mm;}
+		public double size {get; set; default = mm;}
 		public Scatters () {
 			color = {0,1,0,1};
 		}

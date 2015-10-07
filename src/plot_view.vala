@@ -1,8 +1,8 @@
 using Cairo;
 
 namespace Plot {
-	const int mm = 10;
-	const int cm = 100;
+	const double mm = 10;
+	const double cm = 10*mm;
 
 	const ushort LEFT = 0;
 	const ushort BOTTOM = 1;
@@ -10,16 +10,17 @@ namespace Plot {
 	const ushort TOP = 3;
 
 	public class View : Gtk.DrawingArea {
-		public double width {get; set; default = 6*cm;}
-		public double height {get; set; default = 6*cm;}
+		public double width {get; set; default = 5*cm;}
+		public double height {get; set; default = 5*cm;}
 		public double padding {get; set; default = mm;}
 
 		public Background bkg;
 		public Axes[] axes;
 		public Curve curve1;
+		public Scatters scatters;
 
 		public View () {
-			margin = mm;
+			margin = (int) mm;
 			width_request = (int) (width + 2*margin);
 			height_request = (int) (height + 2*margin);
 			add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
@@ -63,7 +64,7 @@ namespace Plot {
 			curve1.points[2] = {3*cm, 5*cm};
 			curve1.points[3] = {7*cm, 4*cm};
 
-			var scatters = new Scatters ();
+			scatters = new Scatters ();
 			scatters.points.append_val ({1*cm, 1*cm});
 			scatters.points.append_val ({2*cm, 2*cm});
 			scatters.points.append_val ({3*cm, 3*cm});
@@ -92,10 +93,15 @@ namespace Plot {
 
 			scatters.draw (context);
 		}
-		public bool export_to_eps (string filename) {
-			var ps_surface = new Cairo.PsSurface (filename, width, height);
+		public void export_to_eps (string filename) {
+			var ps_surface = new Cairo.PsSurface (filename, width + 2*margin, height + 2*margin);
 			ps_surface.set_eps (true);
-			var export_context = ps_surface.get_content ();
+			var export_context = new Cairo.Context (ps_surface);
+			draw_in_context (export_context);
+		}
+		public void export_to_svg (string filename) {
+			var svg_surface = new Cairo.SvgSurface (filename, width + 2*margin, height + 2*margin);
+			var export_context = new Cairo.Context (svg_surface);
 			draw_in_context (export_context);
 		}
 	}

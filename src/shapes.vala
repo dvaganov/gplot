@@ -15,12 +15,90 @@ namespace Plot {
 	}
 
 	public abstract class Shapes : Object {
-		public Gdk.RGBA color {get; set; default = Gdk.RGBA () {red = 0, green = 0, blue = 0, alpha = 0};}
+		public int id {get; protected set;}
+		public string group_name {get; protected set;}
+		public abstract Gdk.RGBA color {get; set;}
+		
 		public abstract void draw (Cairo.Context cr);
 		public abstract void save_to_file (KeyFile file);
 		public inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
 		{
 			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
+		}
+	}
+
+	public class Background : Shapes {
+		public override Gdk.RGBA color {get; set;}
+		public Gdk.RGBA grid_color {get; set;}
+		public double width {get; set; default = 0;}
+		public double height {get; set; default = 0;}
+		public bool has_major_grid {get; set; default = true;}
+		public bool has_minor_grid {get; set; default = true;}
+
+		public Background (int id) {
+			this.id = id;
+			group_name = "Background:" + id.to_string ();
+			color = {1,1,1,1};
+			grid_color = {0.5, 0.5, 0.5, 0.5};
+		}
+		public Background.from_file (KeyFile file, int id) {
+			group_name = "Background:" + id.to_string ();
+			try {
+				_color.parse (file.get_string (group_name, "color"));
+				_grid_color.parse (file.get_string (group_name, "grid_color"));
+				width = file.get_double (group_name, "width");
+				height = file.get_double (group_name, "height");
+				has_major_grid = file.get_boolean (group_name, "has_major_grid");
+				has_minor_grid = file.get_boolean (group_name, "has_minor_grid");
+			} catch (KeyFileError err) {
+				stdout.printf ("Background: %s\n", err.message);
+			}
+		}
+		public override void draw (Context cr) {
+			cr.save ();
+			Gdk.cairo_set_source_rgba (cr, color);
+			cr.paint ();
+			cr.restore ();
+		}
+		public void draw_grid (Context cr) {
+			if (has_major_grid) {
+				cr.save ();
+				Gdk.cairo_set_source_rgba (cr, grid_color);
+				cr.set_line_width (1);
+				for (int i = 0; i < width / cm + 1; i++) {
+					cr.move_to (i*cm, 0);
+					cr.line_to (i*cm, height);
+				}
+				for (int i = 0; i < height / cm + 1; i++) {
+					cr.move_to (0, i*cm);
+					cr.line_to (width, i*cm);
+				}
+				cr.stroke ();
+				cr.restore ();
+			}
+			if (has_minor_grid) {
+				cr.save ();
+				Gdk.cairo_set_source_rgba (cr, grid_color);
+				cr.set_line_width (0.5);
+				for (int i = 0; i < width / mm + 1; i++) {
+					cr.move_to (i*mm, 0);
+					cr.line_to (i*mm, height);
+				}
+				for (int i = 0; i < height / mm + 1; i++) {
+					cr.move_to (0, i*mm);
+					cr.line_to (width, i*mm);
+				}
+				cr.stroke ();
+				cr.restore ();
+			}
+		}
+		public override void save_to_file (KeyFile file) {
+			file.set_string (group_name, "color", color.to_string ());
+			file.set_string (group_name, "grid_color", grid_color.to_string ());
+			file.set_double (group_name, "width", width);
+			file.set_double (group_name, "height", height);
+			file.set_boolean (group_name, "has_major_grid", has_major_grid);
+			file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
 		}
 	}
 
@@ -37,6 +115,7 @@ namespace Plot {
 			OUT,
 			BOTH
 		}
+		public override Gdk.RGBA color {get; set;}
 		// Axes parameters
 		public Orientation orientation {get; private set;}
 		public double length {get; private set;}
@@ -46,15 +125,37 @@ namespace Plot {
 		public string caption {get; set; default = "";}
 		// Ticks parameters
 		public TickType tick_type {get; set; default = TickType.IN;}
-		public ushort major_tick {get; set; default = 2;}
+		public int major_tick {get; set; default = 2;}
 		public double major_tick_size {get; set; default = mm;}
-		public ushort minor_tick {get; set; default = 0;}
+		public int minor_tick {get; set; default = 0;}
 		public double minor_tick_size {get; set; default = 0.5*mm;}
 
 		public Axes (double length, Orientation orientation) {
+			this.id = (int) orientation;
+			group_name = "Axes:" + id.to_string ();
 			this.length = length;
 			this.orientation = orientation;
 			color = {0,0,0,1.0};
+		}
+		public Axes.from_file (KeyFile file, int id) {
+			group_name = "Axes:" + id.to_string ();
+			try {
+				_color.parse (file.get_string (group_name, "color"));
+				visible = file.get_boolean (group_name, "visible");
+				// Axes parameters
+				length = file.get_double (group_name, "length");
+				position = file.get_double (group_name, "position");
+				zero_point = file.get_double (group_name, "zero_point");
+				caption = file.get_string (group_name, "caption");
+				// Ticks parameters
+				tick_type = (TickType) file.get_integer (group_name, "tick_type");
+				major_tick = file.get_integer (group_name, "major_tick");
+				major_tick_size = file.get_double (group_name, "major_tick_size");
+				major_tick = file.get_integer (group_name, "minor_tick");
+				major_tick_size = file.get_double (group_name, "minor_tick_size");
+			} catch (KeyFileError err) {
+				stdout.printf ("Axes: %s\n", err.message);
+			}
 		}
 		public override void draw (Context cr) {
 			cr.save ();
@@ -146,7 +247,6 @@ namespace Plot {
 			cr.restore ();
 		}
 		public override void save_to_file (KeyFile file) {
-			string group_name = "Axes " + ((int) orientation).to_string ();
 			file.set_string (group_name, "color", color.to_string ());
 			file.set_boolean (group_name, "visible", visible);
 			// Axes parameters
@@ -163,81 +263,36 @@ namespace Plot {
 		}
 	}
 
-	public class Background : Shapes {
-		public Gdk.RGBA grid_color {get; set;}
-		public double width {get; set; default = 0;}
-		public double height {get; set; default = 0;}
-		public bool has_major_grid {get; set; default = true;}
-		public bool has_minor_grid {get; set; default = true;}
-
-		public Background () {
-			color = {1,1,1,1};
-			grid_color = {0.5, 0.5, 0.5, 0.5};
-		}
-		public override void draw (Context cr) {
-			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, color);
-			cr.paint ();
-			cr.restore ();
-		}
-		public void draw_grid (Context cr) {
-			if (has_major_grid) {
-				cr.save ();
-				Gdk.cairo_set_source_rgba (cr, grid_color);
-				cr.set_line_width (1);
-				for (int i = 0; i < width / cm + 1; i++) {
-					cr.move_to (i*cm, 0);
-					cr.line_to (i*cm, height);
-				}
-				for (int i = 0; i < height / cm + 1; i++) {
-					cr.move_to (0, i*cm);
-					cr.line_to (width, i*cm);
-				}
-				cr.stroke ();
-				cr.restore ();
-			}
-			if (has_minor_grid) {
-				cr.save ();
-				Gdk.cairo_set_source_rgba (cr, grid_color);
-				cr.set_line_width (0.5);
-				for (int i = 0; i < width / mm + 1; i++) {
-					cr.move_to (i*mm, 0);
-					cr.line_to (i*mm, height);
-				}
-				for (int i = 0; i < height / mm + 1; i++) {
-					cr.move_to (0, i*mm);
-					cr.line_to (width, i*mm);
-				}
-				cr.stroke ();
-				cr.restore ();
-			}
-		}
-		public override void save_to_file (KeyFile file) {
-			string group_name = "Background";
-			file.set_string (group_name, "color", color.to_string ());
-			file.set_string (group_name, "grid_color", grid_color.to_string ());
-			file.set_double (group_name, "width", width);
-			file.set_double (group_name, "height", height);
-			file.set_boolean (group_name, "has_major_grid", has_major_grid);
-			file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
-		}
-	}
-
 	public class Curve : Shapes {
 		private int radius_control_point;
 		private Point center;
 		private ulong motion_handler_id;
 		private inline void calc_center () {center = {0.5*(points[0].x + points[3].x), 0.5*(points[0].y + points[3].y)};}
-
-		public uint id {get; private set;}
+		
+		public override Gdk.RGBA color {get; set;}
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0.5, blue = 0.5, alpha = 1};}
 		public Point[] points {get; set; default = new Point[4];}
 
-		public Curve (uint id) {
+		public Curve (int id) {
 			this.id = id;
+			group_name = "Curve:" + id.to_string ();
 			radius_control_point = 5;
 			color = {0,0,0,1};
+		}
+		public Curve.from_file (KeyFile file, int id) {
+			group_name = "Curve:" + id.to_string ();
+			try {
+				_color.parse (file.get_string (group_name, "color"));
+				is_selected = file.get_boolean (group_name, "is_selected");
+				_selection_color.parse (file.get_string (group_name, "selection_color"));
+				var points_list = file.get_string_list (group_name, "points");
+				for (int i = 0; i < points.length; i++) {
+					points[i] = Point.from_string (points_list[i]);
+				}
+			} catch (KeyFileError err) {
+				stdout.printf ("Background: %s\n", err.message);
+			}
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
 			Point pointer = {event.x - widget.margin, event.y - widget.margin};
@@ -343,7 +398,6 @@ namespace Plot {
 			}
 		}
 		public override void save_to_file (KeyFile file) {
-			string group_name = "Curve " + id.to_string ();
 			string points_list[4];
 			for (int i = 0; i < points.length; i++) {
 				points_list[i] = points[i].to_string ();
@@ -360,14 +414,30 @@ namespace Plot {
 			SQUARE,
 			CIRCLE
 		}
-		public uint id {get; private set;}
+		
+		public override Gdk.RGBA color {get; set;}
 		public Form form {get; set; default = Form.SQUARE;}
 		public double size {get; set; default = mm;}
 		public Array<Point?> points {get; set; default = new Array<Point?> ();}
 		
-		public Scatters (uint id) {
+		public Scatters (int id) {
 			this.id = id;
+			group_name = "Scatters:" + id.to_string ();
 			color = {0,1,0,1};
+		}
+		public Scatters.from_file (KeyFile file, int id) {
+			group_name = "Scatters:" + id.to_string ();
+			try {
+				form = (Form) file.get_integer (group_name, "form");
+				_color.parse (file.get_string (group_name, "color"));
+				size = file.get_double (group_name, "size");
+				var points_list = file.get_string_list (group_name, "points");
+				foreach (unowned string point in points_list) {
+					points.append_val (Point.from_string (point));
+				}
+			} catch (KeyFileError err) {
+				stdout.printf ("Scatters: %s\n", err.message);
+			}
 		}
 		public override void draw (Context cr) {
 			cr.save ();
@@ -387,7 +457,6 @@ namespace Plot {
 			cr.restore ();
 		}
 		public override void save_to_file (KeyFile file) {
-			string group_name = "Scatters " + id.to_string ();
 			string[] points_list = new string[points.length];
 			for (int i = 0; i < points.length; i++) {
 				points_list[i] = points.index(i).to_string ();

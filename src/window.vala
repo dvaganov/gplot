@@ -4,12 +4,86 @@ public class Plot.Window : Gtk.ApplicationWindow {
 	private View plot_view;
 
 	public Window () {
-		var grid = new Grid ();
-		add (grid);
+		create_actions ();
 
-		var btn_save = new Button.with_label ("Save");
+		var header_bar = new Gtk.HeaderBar ();
+		header_bar.show_close_button = true;
+		set_titlebar (header_bar);
+
+		var box_btn = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		box_btn.get_style_context ().add_class ("linked");
+		header_bar.pack_start (box_btn);
+
+		var btn_save = new Button.from_icon_name ("document-save-symbolic");
 		btn_save.halign = Align.CENTER;
-		btn_save.clicked.connect (() => {
+		btn_save.action_name = "win.save";
+		box_btn.pack_start (btn_save);
+
+		var btn_open = new Button.from_icon_name ("document-open-symbolic");
+		btn_open.halign = Align.CENTER;
+		btn_open.action_name = "win.open";
+		box_btn.pack_start (btn_open);
+
+		var btn_export = new Button.from_icon_name ("document-save-as-symbolic");
+		btn_export.halign = Align.CENTER;
+		btn_export.action_name = "win.export";
+		box_btn.pack_start (btn_export);
+
+		var stack_switcher = new Gtk.StackSwitcher ();
+		header_bar.custom_title = stack_switcher;
+
+		var stack = new Gtk.Stack ();
+		stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
+		stack_switcher.stack = stack;
+		add (stack);
+
+		var pane_plot = new Gtk.Paned (Gtk.Orientation.HORIZONTAL);
+		stack.add_titled (pane_plot, "plot", "Plot view");
+
+		var box_plot_left = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+		pane_plot.pack1 (box_plot_left, true, false);
+
+		var stack_switcher_plot_left = new Gtk.StackSwitcher ();
+		stack_switcher_plot_left.valign = Gtk.Align.START;
+		stack_switcher_plot_left.halign = Gtk.Align.CENTER;
+		box_plot_left.pack_start (stack_switcher_plot_left, false, false);
+
+		var stack_plot_left = new Stack ();
+		stack_switcher_plot_left.stack = stack_plot_left;
+		stack_plot_left.hhomogeneous = true;
+		stack_plot_left.width_request = 300;
+		stack_plot_left.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
+		box_plot_left.pack_start (stack_plot_left, true, true);
+
+		var box_parameters = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+		box_parameters.expand = true;
+		stack_plot_left.add_titled (box_parameters, "parameters", "Parameters");
+
+		var label1 = new Gtk.Label ("Parameters");
+		box_parameters.pack_start (label1, true, false);
+
+		var box_add_elements = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+		box_add_elements.expand = true;
+		stack_plot_left.add_titled (box_add_elements, "elements", "Add elements");
+
+		var label2 = new Gtk.Label ("Add elements");
+		box_add_elements.pack_start (label2, true, false);
+
+		var scroll = new ScrolledWindow (null, null);
+		scroll.expand = true;
+		pane_plot.pack2 (scroll, true, false);
+
+		plot_view = new View ();
+		scroll.min_content_width = (int) plot_view.width + 1;
+		scroll.min_content_height = (int) plot_view.height + 1;
+		scroll.add (plot_view);
+
+		var grid_table = new Gtk.Grid ();
+		stack.add_titled (grid_table, "table", "Table view");
+	}
+	private void create_actions () {
+		var simple_action = new GLib.SimpleAction ("save", null);
+		simple_action.activate.connect (() => {
 			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.SAVE, null);
 			chooser.add_button ("_Cancel", Gtk.ResponseType.CANCEL);
 			chooser.add_button ("_Save", Gtk.ResponseType.ACCEPT).get_style_context ().add_class ("suggested-action");
@@ -33,11 +107,10 @@ public class Plot.Window : Gtk.ApplicationWindow {
 			}
 			chooser.close ();
 		});
-		grid.attach (btn_save, 0,0);
-		
-		var btn_load = new Button.with_label ("Load");
-		btn_load.halign = Align.CENTER;
-		btn_load.clicked.connect (() => {
+		this.add_action (simple_action);
+
+		simple_action = new GLib.SimpleAction ("open", null);
+		simple_action.activate.connect (() => {
 			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.OPEN, null);
 			chooser.add_button ("_Cancel", Gtk.ResponseType.CANCEL);
 			chooser.add_button ("_Open", Gtk.ResponseType.ACCEPT).get_style_context ().add_class ("suggested-action");
@@ -60,11 +133,10 @@ public class Plot.Window : Gtk.ApplicationWindow {
 			}
 			chooser.close ();
 		});
-		grid.attach (btn_load, 1,0);
+		this.add_action (simple_action);
 
-		var btn_export = new Button.with_label ("Export");
-		btn_export.halign = Align.CENTER;
-		btn_export.clicked.connect (() => {
+		simple_action = new SimpleAction ("export", null);
+		simple_action.activate.connect (() => {
 			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.SAVE, null);
 			chooser.add_button ("_Cancel", Gtk.ResponseType.CANCEL);
 			chooser.add_button ("_Save", Gtk.ResponseType.ACCEPT).get_style_context ().add_class ("suggested-action");
@@ -78,13 +150,6 @@ public class Plot.Window : Gtk.ApplicationWindow {
 			}
 			chooser.close ();
 		});
-		grid.attach (btn_export, 2,0);
-
-		var scroll = new ScrolledWindow (null, null);
-		scroll.expand = true;
-		grid.attach (scroll, 0,1,3);
-
-		plot_view = new View ();
-		scroll.add (plot_view);
+		this.add_action (simple_action);
 	}
 }

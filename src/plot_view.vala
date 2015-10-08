@@ -20,9 +20,7 @@ namespace Plot {
 		public Scatters scatters;
 
 		public View () {
-			margin = (int) mm;
-			width_request = (int) (width + 2*margin);
-			height_request = (int) (height + 2*margin);
+			halign = valign = Gtk.Align.CENTER;
 			add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
 			button_press_event.connect ((event) => {
 				if (event.button == 1 & event.type == Gdk.EventType.BUTTON_PRESS) {
@@ -36,39 +34,6 @@ namespace Plot {
 				return true;
 			});
 
-//			bkg = new Background (0);
-//			bkg.width = width;
-//			bkg.height = height;
-
-			// Default settings
-			/*axes = new Axes[4];
-			axes[LEFT] = new Axes (height, Axes.Orientation.LEFT);
-			axes[LEFT].position = 0;
-			axes[BOTTOM] = new Axes (width, Axes.Orientation.BOTTOM);
-			axes[BOTTOM].position = height;
-			axes[RIGHT] = new Axes (height, Axes.Orientation.RIGHT);
-			axes[RIGHT].position = width;
-			axes[RIGHT].tick_type = Axes.TickType.OUT;
-			axes[TOP] = new Axes (width, Axes.Orientation.TOP);
-			axes[TOP].position = 0;
-			axes[TOP].tick_type = Axes.TickType.BOTH;
-
-			for (int i = 0; i < axes.length; i++) {
-				axes[i].major_tick = 8;
-				axes[i].minor_tick = 5;
-			}*/
-
-//			curve1 = new Curve (1);
-//			curve1.points[0] = {5*cm, 5*cm};
-//			curve1.points[1] = {5*cm, 2*cm};
-//			curve1.points[2] = {3*cm, 5*cm};
-//			curve1.points[3] = {7*cm, 4*cm};
-
-//			scatters = new Scatters (0);
-//			scatters.points.append_val ({1*cm, 1*cm});
-//			scatters.points.append_val ({2*cm, 2*cm});
-//			scatters.points.append_val ({3*cm, 3*cm});
-
 			draw.connect ((context) => {
 				draw_in_context (context);
 				return true;
@@ -79,7 +44,11 @@ namespace Plot {
 		private void draw_in_context (Cairo.Context context) {
 			//FIXME: Not drawn if nothing changes
 			// Create border
-			context.translate (margin, margin);
+			context.translate (padding, padding);
+
+			var scale_factor = double.min (get_allocated_width () / width, get_allocated_height () / height);
+			width_request = (int) (width * scale_factor) + 1;
+			height_request = (int) (height * scale_factor) + 1;
 
 			// Draw a paper:
 			if (bkg != null) {
@@ -93,22 +62,22 @@ namespace Plot {
 					axes[i].draw (context);
 				}
 			}
-			if (curve1 != null) {
-				curve1.draw (context);
-			}
 
 			if (scatters != null) {
 				scatters.draw (context);
 			}
+			if (curve1 != null) {
+				curve1.draw (context);
+			}
 		}
 		public void export_to_eps (string filename) {
-			var ps_surface = new Cairo.PsSurface (filename, width + 2*margin, height + 2*margin);
+			var ps_surface = new Cairo.PsSurface (filename, width + 2*padding, height + 2*padding);
 			ps_surface.set_eps (true);
 			var export_context = new Cairo.Context (ps_surface);
 			draw_in_context (export_context);
 		}
 		public void export_to_svg (string filename) {
-			var svg_surface = new Cairo.SvgSurface (filename, width + 2*margin, height + 2*margin);
+			var svg_surface = new Cairo.SvgSurface (filename, width + 2*padding, height + 2*padding);
 			var export_context = new Cairo.Context (svg_surface);
 			draw_in_context (export_context);
 		}
@@ -138,11 +107,11 @@ namespace Plot {
 					case "Axes":
 						axes[id] = new Axes.from_file (file, id);
 						break;
-					case "Curve":
-						curve1 = new Curve.from_file (file, id);
-						break;
 					case "Scatters":
 						scatters = new Scatters.from_file (file, id);
+						break;
+					case "Curve":
+						curve1 = new Curve.from_file (file, id);
 						break;
 				}
 			}

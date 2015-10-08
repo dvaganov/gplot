@@ -15,7 +15,7 @@ has_minor_grid=true
 color=rgb(0,0,0)
 visible=true
 length=500
-position=0
+position=-250
 zero_point=0
 caption=
 tick_type=1
@@ -28,7 +28,7 @@ minor_tick_size=5
 color=rgb(0,0,0)
 visible=true
 length=500
-position=500
+position=-250
 zero_point=0
 caption=
 tick_type=1
@@ -41,7 +41,7 @@ minor_tick_size=5
 color=rgb(0,0,0)
 visible=true
 length=500
-position=500
+position=250
 zero_point=0
 caption=
 tick_type=2
@@ -54,7 +54,7 @@ minor_tick_size=5
 color=rgb(0,0,0)
 visible=true
 length=500
-position=0
+position=250
 zero_point=0
 caption=
 tick_type=3
@@ -67,10 +67,10 @@ minor_tick_size=5
 form=1
 color=rgb(0,255,0)
 size=10
-points=100;100=200;200=300;300=
+points=50;-50=100;-100=150;-150=
 
 [Curve:1]
 color=rgb(0,0,0)
 is_selected=true
 selection_color=rgb(255,128,128)
-points=109.24831390380859;89.462615966796875=373.6063232421875;78.14398193359375=117.59169769287109;318.30682373046875=319.20468902587891;286.97299194335938=
+points=-75.53143310546875;-94.059600830078125=195.9322509765625;-1.44647216796875=-2.63677978515625;198.51608276367188=197.81488037109375;196.82052612304688=

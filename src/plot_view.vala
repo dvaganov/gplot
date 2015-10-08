@@ -15,7 +15,7 @@ namespace Plot {
 		public double padding {get; set; default = mm;}
 
 		public Background bkg;
-		public Axes[] axes;
+		public Axes axes[4];
 		public Curve curve1;
 		public Scatters scatters;
 
@@ -36,12 +36,12 @@ namespace Plot {
 				return true;
 			});
 
-			bkg = new Background ();
-			bkg.width = width;
-			bkg.height = height;
+//			bkg = new Background (0);
+//			bkg.width = width;
+//			bkg.height = height;
 
 			// Default settings
-			axes = new Axes[4];
+			/*axes = new Axes[4];
 			axes[LEFT] = new Axes (height, Axes.Orientation.LEFT);
 			axes[LEFT].position = 0;
 			axes[BOTTOM] = new Axes (width, Axes.Orientation.BOTTOM);
@@ -56,18 +56,18 @@ namespace Plot {
 			for (int i = 0; i < axes.length; i++) {
 				axes[i].major_tick = 8;
 				axes[i].minor_tick = 5;
-			}
+			}*/
 
-			curve1 = new Curve (1);
-			curve1.points[0] = {5*cm, 5*cm};
-			curve1.points[1] = {5*cm, 2*cm};
-			curve1.points[2] = {3*cm, 5*cm};
-			curve1.points[3] = {7*cm, 4*cm};
+//			curve1 = new Curve (1);
+//			curve1.points[0] = {5*cm, 5*cm};
+//			curve1.points[1] = {5*cm, 2*cm};
+//			curve1.points[2] = {3*cm, 5*cm};
+//			curve1.points[3] = {7*cm, 4*cm};
 
-			scatters = new Scatters (0);
-			scatters.points.append_val ({1*cm, 1*cm});
-			scatters.points.append_val ({2*cm, 2*cm});
-			scatters.points.append_val ({3*cm, 3*cm});
+//			scatters = new Scatters (0);
+//			scatters.points.append_val ({1*cm, 1*cm});
+//			scatters.points.append_val ({2*cm, 2*cm});
+//			scatters.points.append_val ({3*cm, 3*cm});
 
 			draw.connect ((context) => {
 				draw_in_context (context);
@@ -82,16 +82,24 @@ namespace Plot {
 			context.translate (margin, margin);
 
 			// Draw a paper:
-			bkg.draw (context);
-			bkg.draw_grid (context);
+			if (bkg != null) {
+				bkg.draw (context);
+				bkg.draw_grid (context);
+			}
 
 			// Draw axes
 			for (int i = 0; i < axes.length; i++) {
-				axes[i].draw (context);
+				if (axes[i] != null) {
+					axes[i].draw (context);
+				}
 			}
-			curve1.draw (context);
+			if (curve1 != null) {
+				curve1.draw (context);
+			}
 
-			scatters.draw (context);
+			if (scatters != null) {
+				scatters.draw (context);
+			}
 		}
 		public void export_to_eps (string filename) {
 			var ps_surface = new Cairo.PsSurface (filename, width + 2*margin, height + 2*margin);
@@ -105,7 +113,7 @@ namespace Plot {
 			draw_in_context (export_context);
 		}
 		public void save_to_file (KeyFile file) {
-			string group_name = "View";
+			string group_name = "View:0";
 			file.set_double (group_name, "width", width);
 			file.set_double (group_name, "height", height);
 			file.set_double (group_name, "padding", padding);
@@ -115,6 +123,29 @@ namespace Plot {
 			}
 			scatters.save_to_file (file);
 			curve1.save_to_file (file);
+		}
+		public void load_from_file (KeyFile file) {
+			var groups = file.get_groups ();
+			string group[2];
+			int id;
+			for (int i = 0; i < groups.length; i++) {
+				group = groups[i].split (":", 2);
+				id = int.parse (group[1]);
+				switch (group[0]) {
+					case "Background":
+						bkg = new Background.from_file (file, id);
+						break;
+					case "Axes":
+						axes[id] = new Axes.from_file (file, id);
+						break;
+					case "Curve":
+						curve1 = new Curve.from_file (file, id);
+						break;
+					case "Scatters":
+						scatters = new Scatters.from_file (file, id);
+						break;
+				}
+			}
 		}
 	}
 }

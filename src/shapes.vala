@@ -18,7 +18,7 @@ namespace Plot {
 		public int id {get; protected set;}
 		public string group_name {get; protected set;}
 		public abstract Gdk.RGBA color {get; set;}
-		
+
 		public abstract void draw (Cairo.Context cr);
 		public abstract void save_to_file (KeyFile file);
 		public inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
@@ -140,6 +140,7 @@ namespace Plot {
 		public Axes.from_file (KeyFile file, int id) {
 			group_name = "Axes:" + id.to_string ();
 			try {
+				orientation = (Orientation) id;
 				_color.parse (file.get_string (group_name, "color"));
 				visible = file.get_boolean (group_name, "visible");
 				// Axes parameters
@@ -151,8 +152,8 @@ namespace Plot {
 				tick_type = (TickType) file.get_integer (group_name, "tick_type");
 				major_tick = file.get_integer (group_name, "major_tick");
 				major_tick_size = file.get_double (group_name, "major_tick_size");
-				major_tick = file.get_integer (group_name, "minor_tick");
-				major_tick_size = file.get_double (group_name, "minor_tick_size");
+				minor_tick = file.get_integer (group_name, "minor_tick");
+				minor_tick_size = file.get_double (group_name, "minor_tick_size");
 			} catch (KeyFileError err) {
 				stdout.printf ("Axes: %s\n", err.message);
 			}
@@ -258,26 +259,25 @@ namespace Plot {
 			file.set_integer (group_name, "tick_type", ((int) tick_type));
 			file.set_integer (group_name, "major_tick", major_tick);
 			file.set_double (group_name, "major_tick_size", major_tick_size);
-			file.set_integer (group_name, "minor_tick", major_tick);
-			file.set_double (group_name, "minor_tick_size", major_tick_size);
+			file.set_integer (group_name, "minor_tick", minor_tick);
+			file.set_double (group_name, "minor_tick_size", minor_tick_size);
 		}
 	}
 
 	public class Curve : Shapes {
-		private int radius_control_point;
+		private int radius_control_point {get; set; default = 5;}
 		private Point center;
 		private ulong motion_handler_id;
 		private inline void calc_center () {center = {0.5*(points[0].x + points[3].x), 0.5*(points[0].y + points[3].y)};}
-		
+
 		public override Gdk.RGBA color {get; set;}
 		public bool is_selected {get; set; default = true;}
 		public Gdk.RGBA selection_color {get; set; default = Gdk.RGBA () {red = 1, green = 0.5, blue = 0.5, alpha = 1};}
-		public Point[] points {get; set; default = new Point[4];}
+		public Point[] points {get; private set;}
 
 		public Curve (int id) {
 			this.id = id;
 			group_name = "Curve:" + id.to_string ();
-			radius_control_point = 5;
 			color = {0,0,0,1};
 		}
 		public Curve.from_file (KeyFile file, int id) {
@@ -287,7 +287,8 @@ namespace Plot {
 				is_selected = file.get_boolean (group_name, "is_selected");
 				_selection_color.parse (file.get_string (group_name, "selection_color"));
 				var points_list = file.get_string_list (group_name, "points");
-				for (int i = 0; i < points.length; i++) {
+				points = new Point[4];
+				for (int i = 0; i < points_list.length; i++) {
 					points[i] = Point.from_string (points_list[i]);
 				}
 			} catch (KeyFileError err) {
@@ -414,12 +415,12 @@ namespace Plot {
 			SQUARE,
 			CIRCLE
 		}
-		
+
 		public override Gdk.RGBA color {get; set;}
 		public Form form {get; set; default = Form.SQUARE;}
 		public double size {get; set; default = mm;}
 		public Array<Point?> points {get; set; default = new Array<Point?> ();}
-		
+
 		public Scatters (int id) {
 			this.id = id;
 			group_name = "Scatters:" + id.to_string ();

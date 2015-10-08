@@ -20,17 +20,23 @@ namespace Plot {
 		public Scatters scatters;
 
 		public View () {
-			halign = valign = Gtk.Align.CENTER;
 			add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
 			button_press_event.connect ((event) => {
 				if (event.button == 1 & event.type == Gdk.EventType.BUTTON_PRESS) {
-					curve1.transform_cb (this, event);
+					var context = Gdk.cairo_create (this.get_window ());
+					context.translate (get_allocated_width () / 2, get_allocated_height () / 2);
+					context.scale (1, -1);
+					if (curve1 != null) {
+						curve1.transform_cb (this, event, context);
+					}
 				}
 				queue_draw ();
 				return true;
 			});
 			button_release_event.connect ((event) => {
-				curve1.remove_motion_cb (this);
+				if (curve1 != null) {
+					curve1.remove_motion_cb (this);
+				}
 				return true;
 			});
 
@@ -38,17 +44,24 @@ namespace Plot {
 				draw_in_context (context);
 				return true;
 			});
-
-			queue_draw ();
+			
+			// Temporarily
+			var filename = "saved.gpj";
+			KeyFile file = new KeyFile ();
+			try {
+				file.load_from_file (filename, KeyFileFlags.NONE);
+			} catch (KeyFileError key_err) {
+				stdout.printf ("Load file: %s\n", key_err.message);
+			} catch (FileError err) {
+				stdout.printf ("Load file: %s\n", err.message);
+			}
+			file.set_list_separator ('=');
+			load_from_file (file);
 		}
 		private void draw_in_context (Cairo.Context context) {
-			//FIXME: Not drawn if nothing changes
-			// Create border
-			context.translate (padding, padding);
-
-			var scale_factor = double.min (get_allocated_width () / width, get_allocated_height () / height);
-			width_request = (int) (width * scale_factor) + 1;
-			height_request = (int) (height * scale_factor) + 1;
+			// Modify cmt
+			context.translate (get_allocated_width () / 2, get_allocated_height () / 2);
+			context.scale (1, -1);
 
 			// Draw a paper:
 			if (bkg != null) {

@@ -15,7 +15,7 @@ namespace Plot {
 		public double padding {get; set; default = mm;}
 
 		public Background bkg;
-		public Axes[] axes;
+		public Axes axes[4];
 		public Curve curve1;
 		public Scatters scatters;
 
@@ -41,7 +41,7 @@ namespace Plot {
 //			bkg.height = height;
 
 			// Default settings
-			axes = new Axes[4];
+			/*axes = new Axes[4];
 			axes[LEFT] = new Axes (height, Axes.Orientation.LEFT);
 			axes[LEFT].position = 0;
 			axes[BOTTOM] = new Axes (width, Axes.Orientation.BOTTOM);
@@ -56,7 +56,7 @@ namespace Plot {
 			for (int i = 0; i < axes.length; i++) {
 				axes[i].major_tick = 8;
 				axes[i].minor_tick = 5;
-			}
+			}*/
 
 //			curve1 = new Curve (1);
 //			curve1.points[0] = {5*cm, 5*cm};
@@ -96,7 +96,7 @@ namespace Plot {
 			if (curve1 != null) {
 				curve1.draw (context);
 			}
-			
+
 			if (scatters != null) {
 				scatters.draw (context);
 			}
@@ -137,7 +137,6 @@ namespace Plot {
 						break;
 					case "Axes":
 						axes[id] = new Axes.from_file (file, id);
-						print (id.to_string ());
 						break;
 					case "Curve":
 						curve1 = new Curve.from_file (file, id);

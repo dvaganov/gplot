@@ -19,10 +19,10 @@ position=0
 zero_point=0
 caption=
 tick_type=1
-major_tick=8
+major_tick=5
 major_tick_size=10
-minor_tick=8
-minor_tick_size=10
+minor_tick=5
+minor_tick_size=5
 
 [Axes:1]
 color=rgb(0,0,0)
@@ -32,10 +32,10 @@ position=500
 zero_point=0
 caption=
 tick_type=1
-major_tick=8
+major_tick=5
 major_tick_size=10
-minor_tick=8
-minor_tick_size=10
+minor_tick=5
+minor_tick_size=5
 
 [Axes:2]
 color=rgb(0,0,0)
@@ -45,10 +45,10 @@ position=500
 zero_point=0
 caption=
 tick_type=2
-major_tick=8
+major_tick=5
 major_tick_size=10
-minor_tick=8
-minor_tick_size=10
+minor_tick=5
+minor_tick_size=5
 
 [Axes:3]
 color=rgb(0,0,0)
@@ -58,10 +58,10 @@ position=0
 zero_point=0
 caption=
 tick_type=3
-major_tick=8
+major_tick=5
 major_tick_size=10
-minor_tick=8
-minor_tick_size=10
+minor_tick=5
+minor_tick_size=5
 
 [Scatters:0]
 form=1

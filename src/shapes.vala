@@ -59,19 +59,26 @@ namespace Plot {
 			Gdk.cairo_set_source_rgba (cr, color);
 			cr.paint ();
 			cr.restore ();
+			draw_grid (cr);
+			cr.save ();
+			Gdk.cairo_set_source_rgba (cr, grid_color);
+			cr.set_dash ({mm, 0.5*mm}, 0);
+			cr.rectangle (-0.5*width-1, -0.5*height-1, width+2, height+2);
+			cr.stroke ();
+			cr.restore ();
 		}
-		public void draw_grid (Context cr) {
+		private void draw_grid (Context cr) {
 			if (has_major_grid) {
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, grid_color);
 				cr.set_line_width (1);
-				for (int i = 0; i < width / cm + 1; i++) {
-					cr.move_to (i*cm, 0);
-					cr.line_to (i*cm, height);
+				for (int i = 1; i < width / cm; i++) {
+					cr.move_to (-0.5*width + i*cm, -0.5*height);
+					cr.rel_line_to (0, height);
 				}
-				for (int i = 0; i < height / cm + 1; i++) {
-					cr.move_to (0, i*cm);
-					cr.line_to (width, i*cm);
+				for (int i = 1; i < height / cm; i++) {
+					cr.move_to (-0.5*width, -0.5*height + i*cm);
+					cr.rel_line_to (width, 0);
 				}
 				cr.stroke ();
 				cr.restore ();
@@ -80,13 +87,13 @@ namespace Plot {
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, grid_color);
 				cr.set_line_width (0.5);
-				for (int i = 0; i < width / mm + 1; i++) {
-					cr.move_to (i*mm, 0);
-					cr.line_to (i*mm, height);
+				for (int i = 1; i < width / mm; i++) {
+					cr.move_to (-0.5*width + i*mm, -0.5*height);
+					cr.rel_line_to (0, height);
 				}
-				for (int i = 0; i < height / mm + 1; i++) {
-					cr.move_to (0, i*mm);
-					cr.line_to (width, i*mm);
+				for (int i = 1; i < height / mm; i++) {
+					cr.move_to (-0.5*width, -0.5*height + i*mm);
+					cr.rel_line_to (width, 0);
 				}
 				cr.stroke ();
 				cr.restore ();
@@ -178,19 +185,19 @@ namespace Plot {
 				case TickType.IN:
 					switch (orientation) {
 						case Orientation.BOTTOM:
-							cr.move_to (i * tick_interval, position);
-							cr.rel_line_to (0, -tick_size);
-							break;
-						case Orientation.TOP:
-							cr.move_to (i * tick_interval, position);
+							cr.move_to (-0.5*length + i * tick_interval, position);
 							cr.rel_line_to (0, tick_size);
 							break;
+						case Orientation.TOP:
+							cr.move_to (-0.5*length + i * tick_interval, position);
+							cr.rel_line_to (0, -tick_size);
+							break;
 						case Orientation.LEFT:
-							cr.move_to (position, i * tick_interval);
+							cr.move_to (position, -0.5*length + i * tick_interval);
 							cr.rel_line_to (tick_size, 0);
 							break;
 						case Orientation.RIGHT:
-							cr.move_to (position, i * tick_interval);
+							cr.move_to (position, -0.5*length + i * tick_interval);
 							cr.rel_line_to (-tick_size, 0);
 							break;
 					}
@@ -198,19 +205,19 @@ namespace Plot {
 				case TickType.OUT:
 					switch (orientation) {
 						case Orientation.BOTTOM:
-							cr.move_to (i * tick_interval, position);
-							cr.rel_line_to (0, tick_size);
-							break;
-						case Orientation.TOP:
-							cr.move_to (i * tick_interval, position);
+							cr.move_to (-0.5*length + i * tick_interval, position);
 							cr.rel_line_to (0, -tick_size);
 							break;
+						case Orientation.TOP:
+							cr.move_to (-0.5*length + i * tick_interval, position);
+							cr.rel_line_to (0, tick_size);
+							break;
 						case Orientation.LEFT:
-							cr.move_to (position, i * tick_interval);
+							cr.move_to (position, -0.5*length + i * tick_interval);
 							cr.rel_line_to (-tick_size, 0);
 							break;
 						case Orientation.RIGHT:
-							cr.move_to (position, i * tick_interval);
+							cr.move_to (position, -0.5*length + i * tick_interval);
 							cr.rel_line_to (tick_size, 0);
 							break;
 					}
@@ -219,12 +226,12 @@ namespace Plot {
 					switch (orientation) {
 						case Orientation.BOTTOM:
 						case Orientation.TOP:
-							cr.move_to (i * tick_interval, position - tick_size);
+							cr.move_to (-0.5*length + i * tick_interval, position - tick_size);
 							cr.rel_line_to (0, 2*tick_size);
 							break;
 						case Orientation.LEFT:
 						case Orientation.RIGHT:
-							cr.move_to (position, i * tick_interval - tick_size);
+							cr.move_to (position, -0.5*length + i * tick_interval - tick_size);
 							cr.rel_line_to (2*tick_size, 0);
 							break;
 					}
@@ -235,12 +242,12 @@ namespace Plot {
 			switch (orientation) {
 				case Orientation.BOTTOM:
 				case Orientation.TOP:
-					cr.move_to (0, position);
+					cr.move_to (-0.5*length, position);
 					cr.rel_line_to (length, 0);
 					break;
 				case Orientation.LEFT:
 				case Orientation.RIGHT:
-					cr.move_to (position, 0);
+					cr.move_to (position, -0.5*length);
 					cr.rel_line_to (0, length);
 					break;
 			}
@@ -295,46 +302,32 @@ namespace Plot {
 				stdout.printf ("Background: %s\n", err.message);
 			}
 		}
-		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event) {
-			Point pointer = {event.x - widget.margin, event.y - widget.margin};
-			if (in_vicinity (radius_control_point, points[1].x, points[1].y, pointer.x, pointer.y)) {
+		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event, Cairo.Context cr) {
+			Point pointer = {event.x, event.y};
+			cr.device_to_user (ref pointer.x, ref pointer.y);
+			double x, y; // For position
+			Point rel = {0, 0}; // For motion
+			for (int i = 0; i < points.length; i++) {
+				x = points[i].x;
+				y = points[i].y;
+				if (i != 0) {
+					x += points[0].x;
+					y += points[0].y;
+					rel.x = points[0].x;
+					rel.y = points[0].y;
+				}
+				if (x + radius_control_point > pointer.x & x - radius_control_point < pointer.x &
+					y + radius_control_point > pointer.y & y - radius_control_point < pointer.y) {
+					Point motion_pointer = {0, 0};
 					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					points[1] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					widget.queue_draw ();
-					return true;
-				});
-			} else if (in_vicinity (radius_control_point, points[2].x, points[2].y, pointer.x, pointer.y)) {
-					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					points[2] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					widget.queue_draw ();
-					return true;
-				});
-			}
-			else if (in_vicinity (radius_control_point, points[0].x, points[0].y, pointer.x, pointer.y)) {
-					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					points[0] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					widget.queue_draw ();
-					return true;
-				});
-			} else if (in_vicinity (radius_control_point, points[3].x, points[3].y, pointer.x, pointer.y)) {
-					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					points[3] = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					widget.queue_draw ();
-					return true;
-				});
-			} else if (in_vicinity (radius_control_point, center.x, center.y, pointer.x, pointer.y)) {
-					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					Point motion_pointer = {motion_event.x - widget.margin, motion_event.y - widget.margin};
-					double dx, dy;
-					for (int i = 0; i < points.length; i++) {
-						dx = motion_pointer.x - center.x;
-						dy = motion_pointer.y - center.y;
-						points[i] = {points[i].x + dx, points[i].y + dy};
-					}
-					calc_center ();
-					widget.queue_draw ();
-					return true;
-				});
+						motion_pointer = {motion_event.x, motion_event.y};
+						cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
+						points[i] = {motion_pointer.x - rel.x, motion_pointer.y - rel.y};
+						widget.queue_draw ();
+						return true;
+					});
+					break;
+				}
 			}
 		}
 		public void remove_motion_cb (Gtk.Widget widget) {
@@ -352,7 +345,7 @@ namespace Plot {
 			Gdk.cairo_set_source_rgba (cr, color);
 			cr.set_line_width (2);
 			cr.move_to (points[0].x, points[0].y);
-			cr.curve_to (points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
+			cr.rel_curve_to (points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
 			cr.stroke ();
 			cr.restore ();
 
@@ -362,7 +355,7 @@ namespace Plot {
 				Gdk.cairo_set_source_rgba (cr, color);
 				cr.arc (points[0].x, points[0].y, radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.arc (points[3].x, points[3].y, radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[0].x + points[3].x, points[0].y + points[3].y, radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
 				cr.restore ();
 				// Draw curve selection
@@ -371,31 +364,27 @@ namespace Plot {
 				cr.set_line_width (2);
 				cr.set_dash ({mm, 0.5*mm}, 0);
 				cr.move_to (points[0].x, points[0].y);
-				cr.curve_to (points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
+				cr.rel_curve_to (points[1].x, points[1].y, points[2].x, points[2].y, points[3].x, points[3].y);
 				cr.stroke ();
 				cr.arc (points[0].x, points[0].y, radius_control_point, 0, 2*Math.PI);
 				cr.stroke ();
-				cr.arc (points[3].x, points[3].y, radius_control_point, 0, 2*Math.PI);
-				cr.stroke ();
+				cr.arc (points[0].x + points[3].x, points[0].y + points[3].y, 0.5*radius_control_point, 0, 2*Math.PI);
+				cr.fill ();
 				cr.restore ();
 				// Draw controls
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, selection_color);
 				cr.set_line_width (1);
 				cr.move_to (points[0].x, points[0].y);
-				cr.line_to (points[1].x, points[1].y);
+				cr.rel_line_to (points[1].x, points[1].y);
 				cr.stroke ();
-				cr.arc (points[1].x, points[1].y, radius_control_point, 0, 2*Math.PI);
+				cr.arc (points[0].x + points[1].x, points[0].y + points[1].y, radius_control_point, 0, 2*Math.PI);
 				cr.fill ();
-				cr.move_to (points[3].x, points[3].y);
-				cr.line_to (points[2].x, points[2].y);
+				cr.move_to (points[0].x + points[3].x, points[0].y + points[3].y);
+				cr.line_to (points[0].x + points[2].x, points[0].y + points[2].y);
 				cr.stroke ();
-				cr.arc (points[2].x, points[2].y, 5, 0, 2*Math.PI);
+				cr.arc (points[0].x + points[2].x, points[0].y + points[2].y, 5, 0, 2*Math.PI);
 				cr.fill ();
-				//Draw center point
-				cr.arc (center.x, center.y, radius_control_point, 0, 2*Math.PI);
-				cr.fill ();
-				cr.restore ();
 			}
 		}
 		public override void save_to_file (KeyFile file) {

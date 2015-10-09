@@ -74,8 +74,8 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		pane_plot.pack2 (scroll, true, false);
 
 		plot_view = new View ();
-		scroll.min_content_width = (int) plot_view.width + 1;
-		scroll.min_content_height = (int) plot_view.height + 1;
+		scroll.min_content_width = 500;
+		scroll.min_content_height = 500;
 		scroll.add (plot_view);
 
 		var grid_table = new Gtk.Grid ();

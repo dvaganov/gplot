@@ -59,8 +59,15 @@ namespace Plot {
 			Gdk.cairo_set_source_rgba (cr, color);
 			cr.paint ();
 			cr.restore ();
+			draw_grid (cr);
+			cr.save ();
+			Gdk.cairo_set_source_rgba (cr, grid_color);
+			cr.set_dash ({mm, 0.5*mm}, 0);
+			cr.rectangle (-0.5*width-1, -0.5*height-1, width+2, height+2);
+			cr.stroke ();
+			cr.restore ();
 		}
-		public void draw_grid (Context cr) {
+		private void draw_grid (Context cr) {
 			if (has_major_grid) {
 				cr.save ();
 				Gdk.cairo_set_source_rgba (cr, grid_color);
@@ -296,94 +303,32 @@ namespace Plot {
 			}
 		}
 		public void transform_cb (Gtk.Widget widget, Gdk.EventButton event, Cairo.Context cr) {
-			Point motion_pointer = {0, 0};
 			Point pointer = {event.x, event.y};
 			cr.device_to_user (ref pointer.x, ref pointer.y);
-			if (get_pointed_point (pointer) == null) {
-				print ("Null\n");
-			}
+			double x, y; // For position
+			Point rel = {0, 0}; // For motion
 			for (int i = 0; i < points.length; i++) {
-//				print (get_pointed_point (pointer).to_string () + "\n");
-				if (points[i] == get_pointed_point (pointer)) {
+				x = points[i].x;
+				y = points[i].y;
+				if (i != 0) {
+					x += points[0].x;
+					y += points[0].y;
+					rel.x = points[0].x;
+					rel.y = points[0].y;
+				}
+				if (x + radius_control_point > pointer.x & x - radius_control_point < pointer.x &
+					y + radius_control_point > pointer.y & y - radius_control_point < pointer.y) {
+					Point motion_pointer = {0, 0};
 					motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
 						motion_pointer = {motion_event.x, motion_event.y};
 						cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
-						if (i != 0) {
-							points[i] = {motion_pointer.x - points[0].x, motion_pointer.y - points[0].y};
-						} else {
-							points[i] = {motion_pointer.x, motion_pointer.y};
-						}
+						points[i] = {motion_pointer.x - rel.x, motion_pointer.y - rel.y};
 						widget.queue_draw ();
 						return true;
 					});
+					break;
 				}
 			}
-			
-//			if (in_vicinity (radius_control_point, points[0].x + points[1].x, points[0].y + points[1].y, pointer.x, pointer.y)) {
-//				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-//					motion_pointer = {motion_event.x, motion_event.y};
-//					cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
-//					points[1] = {motion_pointer.x - points[0].x, motion_pointer.y - points[0].y};
-//					widget.queue_draw ();
-//					return true;
-//				});
-//			} else if (in_vicinity (radius_control_point, points[0].x + points[2].x, points[0].y + points[2].y, pointer.x, pointer.y)) {
-//				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-//					motion_pointer = {motion_event.x, motion_event.y};
-//					cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
-//					points[2] = {motion_pointer.x - points[0].x, motion_pointer.y - points[0].y};
-//					widget.queue_draw ();
-//					return true;
-//				});
-//			}
-//			else if (in_vicinity (radius_control_point, points[0].x, points[0].y, pointer.x, pointer.y)) {
-//				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-//					motion_pointer = {motion_event.x, motion_event.y};
-//					cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
-//					points[0] = {motion_pointer.x, motion_pointer.y};
-//					widget.queue_draw ();
-//					return true;
-//				});
-//			} else if (in_vicinity (radius_control_point, points[0].x + points[3].x, points[0].y + points[3].y, pointer.x, pointer.y)) {
-//				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-//					motion_pointer = {motion_event.x, motion_event.y};
-//					cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
-//					points[3] = {motion_pointer.x - points[0].x, motion_pointer.y - points[0].y};
-//					widget.queue_draw ();
-//					return true;
-//				});
-//			} else if (in_vicinity (radius_control_point, center.x, center.y, pointer.x, pointer.y)) {
-//				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-//					motion_pointer = {motion_event.x, motion_event.y};
-//					cr.device_to_user (ref motion_pointer.x, ref motion_pointer.y);
-//					double dx, dy;
-//					for (int i = 0; i < points.length; i++) {
-//						dx = motion_pointer.x - center.x;
-//						dy = motion_pointer.y - center.y;
-//						points[i] = {points[i].x + dx, points[i].y + dy};
-//					}
-//					calc_center ();
-//					widget.queue_draw ();
-//					return true;
-//				});
-//			}
-		}
-		private Point? get_pointed_point (Point pointer) {
-			Point? result = null;
-			double x, y;
-			for (int i = 1; i < points.length; i++) {
-				x = points[0].x + points[i].x;
-				y = points[0].y + points[i].y;
-				if (x + radius_control_point > pointer.x & x - radius_control_point < pointer.x &
-					y + radius_control_point > pointer.y & y - radius_control_point < pointer.y) {
-					result = points[i];
-				}
-			}
-			if (points[0].x + radius_control_point > pointer.x & points[0].x - radius_control_point < pointer.x &
-						points[0].y + radius_control_point > pointer.y & points[0].y - radius_control_point < pointer.y) {
-				result = points[0];
-			}
-			return result;
 		}
 		public void remove_motion_cb (Gtk.Widget widget) {
 			if (motion_handler_id != 0) {
@@ -423,8 +368,8 @@ namespace Plot {
 				cr.stroke ();
 				cr.arc (points[0].x, points[0].y, radius_control_point, 0, 2*Math.PI);
 				cr.stroke ();
-				cr.arc (points[0].x + points[3].x, points[0].y + points[3].y, radius_control_point, 0, 2*Math.PI);
-				cr.stroke ();
+				cr.arc (points[0].x + points[3].x, points[0].y + points[3].y, 0.5*radius_control_point, 0, 2*Math.PI);
+				cr.fill ();
 				cr.restore ();
 				// Draw controls
 				cr.save ();
@@ -440,10 +385,6 @@ namespace Plot {
 				cr.stroke ();
 				cr.arc (points[0].x + points[2].x, points[0].y + points[2].y, 5, 0, 2*Math.PI);
 				cr.fill ();
-				//Draw center point
-//				cr.arc (center.x, center.y, radius_control_point, 0, 2*Math.PI);
-//				cr.fill ();
-//				cr.restore ();
 			}
 		}
 		public override void save_to_file (KeyFile file) {

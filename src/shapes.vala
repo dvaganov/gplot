@@ -1,3 +1,4 @@
+using GLib;
 using Cairo;
 
 namespace Plot {
@@ -19,101 +20,15 @@ namespace Plot {
 		public string group_name {get; protected set;}
 		public abstract Gdk.RGBA color {get; set;}
 
-		public abstract void draw (Cairo.Context cr);
+		public abstract void draw (Cairo.Context cr, Point zero_point);
 		public abstract void save_to_file (KeyFile file);
-		public inline bool in_vicinity (double vicinity, double x0, double y0, double x1, double y1)
-		{
-			return x1 > x0 - vicinity & x1 < x0 + vicinity & y1 > y0 - vicinity & y1 < y0 + vicinity;
-		}
-	}
-
-	public class Background : Shapes {
-		public override Gdk.RGBA color {get; set;}
-		public Gdk.RGBA grid_color {get; set;}
-		public double width {get; set; default = 0;}
-		public double height {get; set; default = 0;}
-		public bool has_major_grid {get; set; default = true;}
-		public bool has_minor_grid {get; set; default = true;}
-
-		public Background (int id) {
-			this.id = id;
-			group_name = "Background:" + id.to_string ();
-			color = {1,1,1,1};
-			grid_color = {0.5, 0.5, 0.5, 0.5};
-		}
-		public Background.from_file (KeyFile file, int id) {
-			group_name = "Background:" + id.to_string ();
-			try {
-				_color.parse (file.get_string (group_name, "color"));
-				_grid_color.parse (file.get_string (group_name, "grid_color"));
-				width = file.get_double (group_name, "width");
-				height = file.get_double (group_name, "height");
-				has_major_grid = file.get_boolean (group_name, "has_major_grid");
-				has_minor_grid = file.get_boolean (group_name, "has_minor_grid");
-			} catch (KeyFileError err) {
-				stdout.printf ("Background: %s\n", err.message);
-			}
-		}
-		public override void draw (Context cr) {
-			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, color);
-			cr.paint ();
-			cr.restore ();
-			draw_grid (cr);
-			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, grid_color);
-			cr.set_dash ({mm, 0.5*mm}, 0);
-			cr.rectangle (-0.5*width-1, -0.5*height-1, width+2, height+2);
-			cr.stroke ();
-			cr.restore ();
-		}
-		private void draw_grid (Context cr) {
-			if (has_major_grid) {
-				cr.save ();
-				Gdk.cairo_set_source_rgba (cr, grid_color);
-				cr.set_line_width (1);
-				for (int i = 1; i < width / cm; i++) {
-					cr.move_to (-0.5*width + i*cm, -0.5*height);
-					cr.rel_line_to (0, height);
-				}
-				for (int i = 1; i < height / cm; i++) {
-					cr.move_to (-0.5*width, -0.5*height + i*cm);
-					cr.rel_line_to (width, 0);
-				}
-				cr.stroke ();
-				cr.restore ();
-			}
-			if (has_minor_grid) {
-				cr.save ();
-				Gdk.cairo_set_source_rgba (cr, grid_color);
-				cr.set_line_width (0.5);
-				for (int i = 1; i < width / mm; i++) {
-					cr.move_to (-0.5*width + i*mm, -0.5*height);
-					cr.rel_line_to (0, height);
-				}
-				for (int i = 1; i < height / mm; i++) {
-					cr.move_to (-0.5*width, -0.5*height + i*mm);
-					cr.rel_line_to (width, 0);
-				}
-				cr.stroke ();
-				cr.restore ();
-			}
-		}
-		public override void save_to_file (KeyFile file) {
-			file.set_string (group_name, "color", color.to_string ());
-			file.set_string (group_name, "grid_color", grid_color.to_string ());
-			file.set_double (group_name, "width", width);
-			file.set_double (group_name, "height", height);
-			file.set_boolean (group_name, "has_major_grid", has_major_grid);
-			file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
-		}
 	}
 
 	public class Axes : Shapes {
 		public enum Orientation {
 			LEFT,
-			BOTTOM,
 			RIGHT,
+			BOTTOM,
 			TOP
 		}
 		public enum TickType {
@@ -125,9 +40,9 @@ namespace Plot {
 		public override Gdk.RGBA color {get; set;}
 		// Axes parameters
 		public Orientation orientation {get; private set;}
-		public double length {get; private set;}
+		public double length {get; set;}
 		public bool visible {get; set; default = true;}
-		public double position {get; set; default = 0;}
+		public Point position {get; set;}
 		public double zero_point {get; set;}
 		public string caption {get; set; default = "";}
 		// Ticks parameters
@@ -137,11 +52,11 @@ namespace Plot {
 		public int minor_tick {get; set; default = 0;}
 		public double minor_tick_size {get; set; default = 0.5*mm;}
 
-		public Axes (double length, Orientation orientation) {
+		public Axes (Orientation orientation) {
 			this.id = (int) orientation;
 			group_name = "Axes:" + id.to_string ();
-			this.length = length;
 			this.orientation = orientation;
+			position = {0, 0};
 			color = {0,0,0,1.0};
 		}
 		public Axes.from_file (KeyFile file, int id) {
@@ -152,7 +67,7 @@ namespace Plot {
 				visible = file.get_boolean (group_name, "visible");
 				// Axes parameters
 				length = file.get_double (group_name, "length");
-				position = file.get_double (group_name, "position");
+				position = Point.from_string (file.get_string (group_name, "position"));
 				zero_point = file.get_double (group_name, "zero_point");
 				caption = file.get_string (group_name, "caption");
 				// Ticks parameters
@@ -165,7 +80,8 @@ namespace Plot {
 				stdout.printf ("Axes: %s\n", err.message);
 			}
 		}
-		public override void draw (Context cr) {
+		public override void draw (Cairo.Context cr, Point zero_point) {
+			Point position = {this.position.x + zero_point.x, this.position.y + zero_point.y};
 			cr.save ();
 			Gdk.cairo_set_source_rgba (cr, color);
 			cr.set_line_width (1);
@@ -179,76 +95,87 @@ namespace Plot {
 				} else {
 					tick_size = minor_tick_size;
 				}
-				switch (tick_type) {
-				case TickType.NONE:
-					break;
-				case TickType.IN:
-					switch (orientation) {
-						case Orientation.BOTTOM:
-							cr.move_to (-0.5*length + i * tick_interval, position);
-							cr.rel_line_to (0, tick_size);
-							break;
-						case Orientation.TOP:
-							cr.move_to (-0.5*length + i * tick_interval, position);
-							cr.rel_line_to (0, -tick_size);
-							break;
-						case Orientation.LEFT:
-							cr.move_to (position, -0.5*length + i * tick_interval);
-							cr.rel_line_to (tick_size, 0);
-							break;
-						case Orientation.RIGHT:
-							cr.move_to (position, -0.5*length + i * tick_interval);
-							cr.rel_line_to (-tick_size, 0);
-							break;
-					}
-					break;
-				case TickType.OUT:
-					switch (orientation) {
-						case Orientation.BOTTOM:
-							cr.move_to (-0.5*length + i * tick_interval, position);
-							cr.rel_line_to (0, -tick_size);
-							break;
-						case Orientation.TOP:
-							cr.move_to (-0.5*length + i * tick_interval, position);
-							cr.rel_line_to (0, tick_size);
-							break;
-						case Orientation.LEFT:
-							cr.move_to (position, -0.5*length + i * tick_interval);
-							cr.rel_line_to (-tick_size, 0);
-							break;
-						case Orientation.RIGHT:
-							cr.move_to (position, -0.5*length + i * tick_interval);
-							cr.rel_line_to (tick_size, 0);
-							break;
-					}
-					break;
-					case TickType.BOTH:
-					switch (orientation) {
-						case Orientation.BOTTOM:
-						case Orientation.TOP:
-							cr.move_to (-0.5*length + i * tick_interval, position - tick_size);
-							cr.rel_line_to (0, 2*tick_size);
-							break;
-						case Orientation.LEFT:
-						case Orientation.RIGHT:
-							cr.move_to (position, -0.5*length + i * tick_interval - tick_size);
-							cr.rel_line_to (2*tick_size, 0);
-							break;
-					}
-					break;
+				switch (orientation) {
+					case Orientation.LEFT:
+						cr.move_to (position.x, position.y + i * tick_interval);
+						switch (tick_type) {
+							case TickType.IN:
+								cr.rel_line_to (tick_size, 0);
+								break;
+							case TickType.OUT:
+								cr.rel_line_to (-tick_size, 0);
+								break;
+							case TickType.BOTH:
+								cr.move_to (position.x - tick_size, position.y + i * tick_interval);
+								cr.rel_line_to (2*tick_size, 0);
+								break;
+							case TickType.NONE:
+								break;
+						}
+						break;
+					case Orientation.RIGHT:
+						cr.move_to (position.x, position.y + i * tick_interval);
+						switch (tick_type) {
+							case TickType.IN:
+								cr.rel_line_to (-tick_size, 0);
+								break;
+							case TickType.OUT:
+								cr.rel_line_to (tick_size, 0);
+								break;
+							case TickType.BOTH:
+								cr.move_to (position.x - tick_size, position.y + i * tick_interval);
+								cr.rel_line_to (2*tick_size, 0);
+								break;
+							case TickType.NONE:
+								break;
+						}
+						break;
+					case Orientation.BOTTOM:
+						cr.move_to (position.x + i * tick_interval, position.y);
+						switch (tick_type) {
+							case TickType.IN:
+								cr.rel_line_to (0, tick_size);
+								break;
+							case TickType.OUT:
+								cr.rel_line_to (0, -tick_size);
+								break;
+							case TickType.BOTH:
+								cr.move_to (position.x + i * tick_interval, position.y - tick_size);
+								cr.rel_line_to (0, 2*tick_size);
+								break;
+							case TickType.NONE:
+								break;
+						}
+						break;
+					case Orientation.TOP:
+						cr.move_to (position.x + i * tick_interval, position.y);
+						switch (tick_type) {
+							case TickType.IN:
+								cr.rel_line_to (0, -tick_size);
+								break;
+							case TickType.OUT:
+								cr.rel_line_to (0, tick_size);
+								break;
+							case TickType.BOTH:
+								cr.move_to (position.x + i * tick_interval, position.y - tick_size);
+								cr.rel_line_to (0, 2*tick_size);
+								break;
+							case TickType.NONE:
+								break;
+						}
+						break;
 				}
 			}
 			// Draw axes
+			cr.move_to (position.x, position.y);
 			switch (orientation) {
-				case Orientation.BOTTOM:
-				case Orientation.TOP:
-					cr.move_to (-0.5*length, position);
-					cr.rel_line_to (length, 0);
-					break;
 				case Orientation.LEFT:
 				case Orientation.RIGHT:
-					cr.move_to (position, -0.5*length);
 					cr.rel_line_to (0, length);
+					break;
+				case Orientation.BOTTOM:
+				case Orientation.TOP:
+					cr.rel_line_to (length, 0);
 					break;
 			}
 			cr.stroke ();
@@ -259,7 +186,7 @@ namespace Plot {
 			file.set_boolean (group_name, "visible", visible);
 			// Axes parameters
 			file.set_double (group_name, "length", length);
-			file.set_double (group_name, "position", position);
+			file.set_string (group_name, "position", position.to_string ());
 			file.set_double (group_name, "zero_point", zero_point);
 			file.set_string (group_name, "caption", caption);
 			// Ticks parameters
@@ -271,7 +198,7 @@ namespace Plot {
 		}
 	}
 
-	public class Curve : Shapes {
+	/*public class Curve : Shapes {
 		private int radius_control_point {get; set; default = 5;}
 		private Point center;
 		private ulong motion_handler_id;
@@ -456,5 +383,5 @@ namespace Plot {
 			file.set_double (group_name, "size", size);
 			file.set_string_list (group_name, "points", points_list);
 		}
-	}
+	}*/
 }

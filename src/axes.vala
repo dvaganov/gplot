@@ -31,14 +31,14 @@ public class Plot.Axes : Object {
 	public int minor_tick {get; set; default = 5;}
 	public double minor_tick_size {get; set; default = 0.5*mm;}
 
-	public Axes (int parent_id, Orientation orientation) {
+	public Axes (uint parent_id, Orientation orientation) {
 		this.id = (int) orientation;
 		group_name = @"Axes:$parent_id:$id";
 		this.orientation = orientation;
 		position = {0, 0};
 		color = {0,0,0,1.0};
 	}
-	public Axes.from_file (KeyFile file, int parent_id, int id) {
+	public Axes.from_file (KeyFile file, uint parent_id, uint id) {
 		group_name = @"Axes:$parent_id:$id";
 		try {
 			orientation = (Orientation) id;

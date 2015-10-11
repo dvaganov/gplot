@@ -7,7 +7,7 @@ public class Plot.Layer : Object {
 	private Point shift;
 	private Point scale;
 	
-	public int id {get; set;}
+	public uint id {get; set;}
 	public string group_name {get; construct set;}
 	public Gdk.RGBA color_background {get; set;}
 	public Gdk.RGBA color_border {get; set;}
@@ -19,28 +19,27 @@ public class Plot.Layer : Object {
 	public Point top_left_point {get; set;}
 	public Point units {get; private set;}
 
-	public Array<Shapes?> children {get; set; default = new Array<Shapes?> ();}
+	public GenericArray<Shapes> children {get; set; default = new GenericArray<Shapes> ();}
 
 	public Layer (int id) {
 		this.id = id;
 		group_name = @"Layer:0:$id";
+		// Default parameters
 		color_background = {1, 1, 1, 1};
 		color_border = {0, 0, 0, 1};
 		width = 330;
 		height = 4*cm;
 		margin = {mm, 2*mm, 3*mm, mm};
-		top_left_point = shift = {0, 0};
+		top_left_point = {0, 0};
 		priv_start_point = top_left_point;
-		scale = {1, 1};
 		units = {300, 360};
-		notify.connect (notify_cb);
 		for (int i = 0; i < axes.length; i++) {
 			axes[i] = new Axes (id, (Axes.Orientation) i);
 		}
-		var temp = new Plot.Curve (id, 0);
-		children.append_val (temp);
-		var temp2 = new Plot.Scatters (id, 0);
-		children.append_val (temp2);
+		// Inner calculations
+		shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
+		scale = {(width - margin[0] - margin[1]) / units.x, (height - margin[2] - margin[3]) / units.y};
+		notify.connect (notify_cb);
 	}
 	public Layer.from_file (KeyFile file, int id) {
 		group_name = @"Layer:0:$id";
@@ -66,12 +65,10 @@ public class Plot.Layer : Object {
 						axes[int.parse (temp[2])] = new Plot.Axes.from_file (file, id, int.parse (temp[2]));
 						break;
 					case "Scatters":
-						var shape = new Plot.Scatters.from_file (file, id, int.parse (temp[2]));
-						children.append_val (shape);
+						children.add (new Plot.Scatters.from_file (file, id, int.parse (temp[2])));
 						break;
 					case "Curve":
-						var shape = new Plot.Curve.from_file (file, id, int.parse (temp[2]));
-						children.append_val (shape);
+						children.add (new Plot.Curve.from_file (file, id, int.parse (temp[2])));
 						break;
 				}
 			}
@@ -93,8 +90,19 @@ public class Plot.Layer : Object {
 		}
 		// Children
 		for (int i = 0; i < children.length; i++) {
-			children.index (i).save_to_file (file);
+			children.get (i).save_to_file (file);
 		}
+	}
+	public void add_shape (Plot.ShapeType shape_type) {
+		switch (shape_type) {
+			case ShapeType.CURVE:
+				children.add (new Curve (id, children.length));
+				break;
+			case ShapeType.SCATTERS:
+				children.add (new Scatters (id, children.length));
+				break;
+		}
+		children.get (children.length - 1).recalculate_points (shift, scale);
 	}
 	public void draw (Cairo.Context cr) {
 		// Draw background and border
@@ -129,13 +137,13 @@ public class Plot.Layer : Object {
 		}
 		// Draw shapes
 		for (int i = 0; i < children.length; i++) {
-			children.index (i).draw (cr);
+			children.get (i).draw (cr);
 		}
 	}
 	public void press_event_cb (Gtk.Widget widget, Gdk.EventButton event) {
 		for (int i = 0; i < children.length; i++) {
-			if (children.index (i).is_selected) {
-				children.index (i).transform (widget, event);
+			if (children.get (i).is_selected) {
+				children.get (i).transform (widget, event);
 			}
 		}
 	}
@@ -148,7 +156,7 @@ public class Plot.Layer : Object {
 				shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
 				scale = {(width - margin[0] - margin[1]) / units.x, (height - margin[2] - margin[3]) / units.y};
 				for (int i = 0; i < children.length; i++) {
-					children.index (i).recalculate_points (shift, scale);
+					children.get (i).recalculate_points (shift, scale);
 				}
 				break;
 		}

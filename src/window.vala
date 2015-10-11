@@ -66,7 +66,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 
 		var ent_param1 = new Gtk.Entry ();
 		ent_param1.activate.connect ((widget) => {
-			plot_view.layers.index (0).zero_point = Point.from_string (widget.text);
+			plot_view.layers.index (0).top_left_point = Point.from_string (widget.text);
 			plot_view.queue_draw ();
 		});
 		box_parameters.pack_start (ent_param1, false, false);
@@ -143,12 +143,12 @@ public class Plot.Window : Gtk.ApplicationWindow {
 				try {
 					file.load_from_file (filename, KeyFileFlags.NONE);
 				} catch (KeyFileError key_err) {
-					stdout.printf ("Load file: %s\n", key_err.message);
+					print (@"Load file: $(key_err.message)\n");
 				} catch (FileError err) {
-					stdout.printf ("Load file: %s\n", err.message);
+					print (@"Load file: $(err.message)\n");
 				}
 				file.set_list_separator ('=');
-				plot_view.load_from_file (file);
+				plot_view.open_file (file);
 			}
 			chooser.close ();
 		});

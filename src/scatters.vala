@@ -14,23 +14,23 @@ public class Plot.Scatters : Plot.Shapes {
 	public Gdk.RGBA color_line {get; set;}
 	public int size {get; set; default = mm;}
 
-	public Scatters (int parent_id, int id) {
+	public Scatters (uint parent_id, uint id) {
 		this.id = id;
 		group_name = @"Scatters:$parent_id:$id";
 		color_scatters = {0, 0, 0, 1};
 		color_line = {0, 0, 0, 1};
 		for (int i = 0; i < 4; i++) {
-			points.append_val (Point () {x = i*cm, y = i*cm});
+			points.add (Point () {x = i*cm, y = i*cm});
 		}
 	}
-	public Scatters.from_file (KeyFile file, int parent_id, int id) {
+	public Scatters.from_file (KeyFile file, uint parent_id, uint id) {
 		group_name = @"Scatters:$parent_id:$id";
 		try {
 			// From Shapes
 			is_selected = file.get_boolean (group_name, "is_selected");
 			var points_list = file.get_string_list (group_name, "points");
 			foreach (unowned string point in points_list) {
-				points.append_val (Point.from_string (point));
+				points.add (Point.from_string (point));
 			}
 			scale = Point.from_string (file.get_string (group_name, "scale"));
 			shift = Point.from_string (file.get_string (group_name, "shift"));
@@ -48,7 +48,7 @@ public class Plot.Scatters : Plot.Shapes {
 		file.set_boolean (group_name, "is_selected", is_selected);
 		string[] points_list = new string[points.length];
 		for (int i = 0; i < points.length; i++) {
-			points_list[i] = points.index(i).to_string ();
+			points_list[i] = points.get (i).to_string ();
 		}
 		file.set_string_list (group_name, "points", points_list);
 		file.set_string (group_name, "scale", scale.to_string ());
@@ -65,7 +65,7 @@ public class Plot.Scatters : Plot.Shapes {
 		switch (form) {
 			case Form.SQUARE:
 				for (int i = 0; i < points.length; i++) {
-					cr.move_to (points.index(i).x - 0.5*size, points.index(i).y - 0.5*size);
+					cr.move_to (points.get (i).x - 0.5*size, points.get (i).y - 0.5*size);
 					cr.rel_line_to (size, 0);
 					cr.rel_line_to (0, size);
 					cr.rel_line_to (-size, 0);

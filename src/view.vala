@@ -9,30 +9,29 @@ public class Plot.View : Gtk.DrawingArea {
 	public bool has_major_grid {get; set; default = true;}
 	public bool has_minor_grid {get; set; default = true;}
 
-	public Array<Layer?> layers {get; set; default = new Array<Layer?> ();}
+	public GenericArray<Layer> layers {get; set; default = new GenericArray<Layer> ();}
 
 	public View () {
 		group_name = "View:0:0";
-		layers.append_val (new Layer (0));
-		layers.index (0).top_left_point = {90, 90};
+		layers.add (new Layer (0));
 		color_background = {1,1,1,1};
 		color_grid = {0.5, 0.5, 0.5, 0.5};
 		add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
 		button_press_event.connect (button_press_event_cb);
 		button_release_event.connect ((event) => {
 			for (int i = 0; i < layers.length; i++) {
-				for (int k = 0; k < layers.index (i).children.length; k++) {
-					if (layers.index (i).children.index (k).motion_handler_id != null) {
-						disconnect (layers.index (i).children.index (k).motion_handler_id);
-						layers.index (i).children.index (k).motion_handler_id = null;
+				for (int k = 0; k < layers.get (i).children.length; k++) {
+					if (layers.get (i).children.get (k).motion_handler_id != null) {
+						disconnect (layers.get (i).children.get (k).motion_handler_id);
+						layers.get (i).children.get (k).motion_handler_id = null;
 					}
 				}
 			}
 			return true;
 		});
 		draw.connect ((context) => {
-			width = layers.index (0).width + (int) layers.index (0).top_left_point.x + 51;
-			height = layers.index (0).height + (int) layers.index (0).top_left_point.y + 51;
+			width = layers.get (0).width + (int) layers.get (0).top_left_point.x + 51;
+			height = layers.get (0).height + (int) layers.get (0).top_left_point.y + 51;
 			width_request = width;
 			height_request = height;
 			draw_in_context (context, get_allocated_width (), get_allocated_height ());
@@ -46,7 +45,7 @@ public class Plot.View : Gtk.DrawingArea {
 //				min = {layers.index (i).top_left_point.x, layers.index (i).top_left_point.y};
 //				max = {min.x + layers.index (i).width, min.y + layers.index (i).height};
 //				if (min.x < event.x && event.x < max.x && min.y < event.y && event.y < max.y) {
-					layers.index (i).press_event_cb (this, event);
+					layers.get (i).press_event_cb (this, event);
 //				}
 			}
 		}
@@ -54,7 +53,7 @@ public class Plot.View : Gtk.DrawingArea {
 	}
 	private void draw_in_context (Cairo.Context cr, double cr_width, double cr_height) {
 		draw_background (cr);
-		layers.index (0).draw (cr);
+		layers.get (0).draw (cr);
 	}
 	private void draw_background (Cairo.Context cr) {
 		// Draw background
@@ -115,13 +114,11 @@ public class Plot.View : Gtk.DrawingArea {
 		file.set_boolean (group_name, "has_major_grid", has_major_grid);
 		file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
 		for (int i = 0; i < layers.length; i++) {
-			layers.index (i).save_to_file (file);
+			layers.get (i).save_to_file (file);
 		}
 	}
 	public void open_file (KeyFile file) {
-		for (var i = layers.length - 1; i >= 0; i--) {
-			layers.remove_index (i);
-		}
+		layers.remove_range (0, layers.length);
 		var groups = file.get_groups ();
 		string group[2];
 		int id;
@@ -129,8 +126,9 @@ public class Plot.View : Gtk.DrawingArea {
 			group = groups[i].split (":", 2);
 			id = int.parse (group[1]);
 			if (group[0] == "Layer") {
-				layers.append_val (new Layer.from_file (file, id));
+				layers.add (new Layer.from_file (file, id));
 			}
 		}
+		queue_draw ();
 	}
 }

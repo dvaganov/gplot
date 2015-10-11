@@ -37,6 +37,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		stack_switcher.stack = stack;
 		add (stack);
 
+		// Plot view
 		var pane_plot = new Gtk.Paned (Gtk.Orientation.HORIZONTAL);
 		stack.add_titled (pane_plot, "plot", "Plot view");
 
@@ -48,6 +49,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		stack_switcher_plot_left.halign = Gtk.Align.CENTER;
 		box_plot_left.pack_start (stack_switcher_plot_left, false, false);
 
+		// Plot: Left: Parameters and Adds
 		var stack_plot_left = new Stack ();
 		stack_switcher_plot_left.stack = stack_plot_left;
 		stack_plot_left.hhomogeneous = true;
@@ -55,12 +57,29 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		stack_plot_left.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
 		box_plot_left.pack_start (stack_plot_left, true, true);
 
-		var box_parameters = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
+		var box_parameters = new Gtk.Box (Gtk.Orientation.VERTICAL, 10);
 		box_parameters.expand = true;
 		stack_plot_left.add_titled (box_parameters, "parameters", "Parameters");
 
-		var label1 = new Gtk.Label ("Parameters");
-		box_parameters.pack_start (label1, true, false);
+		var param1 = new Gtk.Label ("Zero point");
+		box_parameters.pack_start (param1, false, false);
+
+		var ent_param1 = new Gtk.Entry ();
+		ent_param1.activate.connect ((widget) => {
+			plot_view.layers.index (0).top_left_point = Point.from_string (widget.text);
+			plot_view.queue_draw ();
+		});
+		box_parameters.pack_start (ent_param1, false, false);
+
+		var param2 = new Gtk.Label ("Width:");
+		box_parameters.pack_start (param2, false, false);
+
+		var ent_param2 = new Gtk.Entry ();
+		ent_param2.activate.connect ((widget) => {
+			plot_view.layers.index (0).width = int.parse (widget.text);
+			plot_view.queue_draw ();
+		});
+		box_parameters.pack_start (ent_param2, false, false);
 
 		var box_add_elements = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
 		box_add_elements.expand = true;
@@ -124,12 +143,12 @@ public class Plot.Window : Gtk.ApplicationWindow {
 				try {
 					file.load_from_file (filename, KeyFileFlags.NONE);
 				} catch (KeyFileError key_err) {
-					stdout.printf ("Load file: %s\n", key_err.message);
+					print (@"Load file: $(key_err.message)\n");
 				} catch (FileError err) {
-					stdout.printf ("Load file: %s\n", err.message);
+					print (@"Load file: $(err.message)\n");
 				}
 				file.set_list_separator ('=');
-				plot_view.load_from_file (file);
+				plot_view.open_file (file);
 			}
 			chooser.close ();
 		});

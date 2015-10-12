@@ -2,103 +2,183 @@ using Gtk;
 
 public class Plot.Window : Gtk.ApplicationWindow {
 	private View plot_view;
+	private Gtk.Stack plot_view_parameters_stack;
 
 	public Window () {
+		plot_view = new View ();
 		create_actions ();
 
-		var header_bar = new Gtk.HeaderBar ();
-		header_bar.show_close_button = true;
-		set_titlebar (header_bar);
-
-		var box_btn = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		box_btn.get_style_context ().add_class ("linked");
-		header_bar.pack_start (box_btn);
-
+		// Header bar
 		var btn_save = new Button.from_icon_name ("document-save-symbolic");
 		btn_save.halign = Align.CENTER;
 		btn_save.action_name = "win.save";
-		box_btn.pack_start (btn_save);
 
 		var btn_open = new Button.from_icon_name ("document-open-symbolic");
 		btn_open.halign = Align.CENTER;
 		btn_open.action_name = "win.open";
-		box_btn.pack_start (btn_open);
 
 		var btn_export = new Button.from_icon_name ("document-save-as-symbolic");
 		btn_export.halign = Align.CENTER;
 		btn_export.action_name = "win.export";
+
+		var box_btn = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		box_btn.get_style_context ().add_class ("linked");
+		box_btn.pack_start (btn_save);
+		box_btn.pack_start (btn_open);
 		box_btn.pack_start (btn_export);
 
-		var stack_switcher = new Gtk.StackSwitcher ();
-		header_bar.custom_title = stack_switcher;
+		// Plot view
+		var scroll_plot_view = new Gtk.ScrolledWindow (null, null);
+		scroll_plot_view.expand = true;
+		scroll_plot_view.min_content_width = 400;
+		scroll_plot_view.min_content_height = 400;
+		scroll_plot_view.add (plot_view);
 
+		var plot_view_grid = new Gtk.Grid ();
+		plot_view_grid.expand = true;
+		plot_view_grid.attach (create_plot_view_left_box (), 0, 0);
+		plot_view_grid.attach (scroll_plot_view, 1, 0);
+
+		// Table view
+		var table_view_grid = new Gtk.Grid ();
+
+		// Window
 		var stack = new Gtk.Stack ();
 		stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
+
+		var stack_switcher = new Gtk.StackSwitcher ();
 		stack_switcher.stack = stack;
+		stack.add_titled (plot_view_grid, "plot", "Plot view");
+		stack.add_titled (table_view_grid, "table", "Table view");
+
+		var header_bar = new Gtk.HeaderBar ();
+		header_bar.show_close_button = true;
+		header_bar.pack_start (box_btn);
+		header_bar.custom_title = stack_switcher;
+
+		set_titlebar (header_bar);
 		add (stack);
+	}
+	private Gtk.Box create_plot_view_left_box () {
+		plot_view_parameters_stack = new Gtk.Stack ();
+		plot_view_parameters_stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
+		set_plot_view_parameters_stack ();
 
-		// Plot view
-		var pane_plot = new Gtk.Paned (Gtk.Orientation.HORIZONTAL);
-		stack.add_titled (pane_plot, "plot", "Plot view");
+		var sidebar = new Gtk.StackSidebar ();
+		sidebar.stack = plot_view_parameters_stack;
 
-		var box_plot_left = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-		pane_plot.pack1 (box_plot_left, true, false);
+		var frame_sidebar = new Gtk.Frame (null);
+		frame_sidebar.shadow_type = Gtk.ShadowType.IN;
+		frame_sidebar.valign = Gtk.Align.START;
+		frame_sidebar.height_request = 100;
+		frame_sidebar.add (sidebar);
 
-		var stack_switcher_plot_left = new Gtk.StackSwitcher ();
-		stack_switcher_plot_left.valign = Gtk.Align.START;
-		stack_switcher_plot_left.halign = Gtk.Align.CENTER;
-		box_plot_left.pack_start (stack_switcher_plot_left, false, false);
+		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
+		box.width_request = 300;
+		box.margin = 15;
+		box.pack_start (frame_sidebar, false, true);
+		box.pack_start (plot_view_parameters_stack);
 
-		// Plot: Left: Parameters and Adds
-		var stack_plot_left = new Stack ();
-		stack_switcher_plot_left.stack = stack_plot_left;
-		stack_plot_left.hhomogeneous = true;
-		stack_plot_left.width_request = 300;
-		stack_plot_left.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
-		box_plot_left.pack_start (stack_plot_left, true, true);
+		return box;
+	}
+	private void set_plot_view_parameters_stack () {
+		var path_label = new Gtk.Label ("Path");
 
-		var box_parameters = new Gtk.Box (Gtk.Orientation.VERTICAL, 10);
-		box_parameters.expand = true;
-		stack_plot_left.add_titled (box_parameters, "parameters", "Parameters");
+		var color_label = new Gtk.Label ("Background color");
+		color_label.halign = Gtk.Align.START;
 
-		var param1 = new Gtk.Label ("Zero point");
-		box_parameters.pack_start (param1, false, false);
+		var color_button = new Gtk.ColorButton.with_rgba (plot_view.color_background);
+		color_button.halign = Gtk.Align.END;
+		color_button.color_set.connect (() => {
+			plot_view.color_background = color_button.rgba;
+		});
 
-		var ent_param1 = new Gtk.Entry ();
-		ent_param1.activate.connect ((widget) => {
-			plot_view.layers.index (0).top_left_point = Point.from_string (widget.text);
+		var color_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		color_box.margin_start = color_box.margin_end = 15;
+		color_box.pack_start (color_label);
+		color_box.pack_start (color_button);
+
+		var color_grid_label = new Gtk.Label ("Grid color");
+		color_grid_label.halign = Gtk.Align.START;
+
+		var color_grid_button = new Gtk.ColorButton.with_rgba (plot_view.color_grid);
+		color_grid_button.halign = Gtk.Align.END;
+		color_grid_button.color_set.connect (() => {
+			plot_view.color_grid = color_grid_button.rgba;
+		});
+
+		var color_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		color_grid_box.margin_start = color_grid_box.margin_end = 15;
+		color_grid_box.pack_start (color_grid_label);
+		color_grid_box.pack_start (color_grid_button);
+
+		var major_grid_label = new Gtk.Label ("Major grid");
+		major_grid_label.halign = Gtk.Align.START;
+
+		var major_grid_switch = new Gtk.Switch ();
+		major_grid_switch.halign = Gtk.Align.END;
+		major_grid_switch.active = plot_view.has_major_grid;
+		major_grid_switch.notify["active"].connect (() => {
+			if (major_grid_switch.active) {
+				plot_view.has_major_grid = true;
+			} else {
+				plot_view.has_major_grid = false;
+			}
 			plot_view.queue_draw ();
 		});
-		box_parameters.pack_start (ent_param1, false, false);
 
-		var param2 = new Gtk.Label ("Width:");
-		box_parameters.pack_start (param2, false, false);
+		var major_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		major_grid_box.margin_start = major_grid_box.margin_end = 15;
+		major_grid_box.pack_start (major_grid_label);
+		major_grid_box.pack_start (major_grid_switch);
 
-		var ent_param2 = new Gtk.Entry ();
-		ent_param2.activate.connect ((widget) => {
-			plot_view.layers.index (0).width = int.parse (widget.text);
+		var minor_grid_label = new Gtk.Label ("Major grid");
+		minor_grid_label.halign = Gtk.Align.START;
+
+		var minor_grid_switch = new Gtk.Switch ();
+		minor_grid_switch.halign = Gtk.Align.END;
+		minor_grid_switch.active = plot_view.has_major_grid;
+		minor_grid_switch.notify["active"].connect (() => {
+			if (minor_grid_switch.active) {
+				plot_view.has_minor_grid = true;
+			} else {
+				plot_view.has_minor_grid = false;
+			}
 			plot_view.queue_draw ();
 		});
-		box_parameters.pack_start (ent_param2, false, false);
 
-		var box_add_elements = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-		box_add_elements.expand = true;
-		stack_plot_left.add_titled (box_add_elements, "elements", "Add elements");
+		var minor_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		minor_grid_box.margin_start = minor_grid_box.margin_end = 15;
+		minor_grid_box.pack_start (minor_grid_label);
+		minor_grid_box.pack_start (minor_grid_switch);
 
-		var label2 = new Gtk.Label ("Add elements");
-		box_add_elements.pack_start (label2, true, false);
+		var list_box = new Gtk.ListBox ();
+		list_box.selection_mode = Gtk.SelectionMode.NONE;
+		list_box.add (color_box);
+		list_box.add (color_grid_box);
+		list_box.add (major_grid_box);
+		list_box.add (minor_grid_box);
+		list_box.set_header_func ((row) => {
+			if (row.get_index () == 0) {
+				row.set_header (null);
+			} else if (row.get_header () == null) {
+				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+			}
+		});
 
-		var scroll = new ScrolledWindow (null, null);
-		scroll.expand = true;
-		pane_plot.pack2 (scroll, true, false);
+		var frame = new Frame (null);
+		frame.shadow_type = Gtk.ShadowType.IN;
+		frame.valign = Gtk.Align.START;
+		frame.add (list_box);
 
-		plot_view = new View ();
-		scroll.min_content_width = 500;
-		scroll.min_content_height = 500;
-		scroll.add (plot_view);
+		var scroll = new Gtk.ScrolledWindow (null, null);
+		scroll.add (frame);
 
-		var grid_table = new Gtk.Grid ();
-		stack.add_titled (grid_table, "table", "Table view");
+		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
+		box.pack_start (path_label, false, true);
+		box.pack_start (scroll, true, true);
+
+		plot_view_parameters_stack.add_titled (box, "background", "Background");
 	}
 	private void create_actions () {
 		var simple_action = new GLib.SimpleAction ("save", null);

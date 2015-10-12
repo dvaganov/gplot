@@ -2,6 +2,10 @@ namespace Plot {
 	const int mm = 10;
 	const int cm = 10*mm;
 	
+	public enum ShapeType {
+		CURVE, SCATTERS
+	}
+	
 	public struct Point {
 		public double x;
 		public double y;

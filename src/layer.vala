@@ -1,7 +1,3 @@
-using GLib;
-using Cairo;
-using Plot;
-
 public class Plot.Layer : Object {
 	private Point priv_start_point;
 	private Point shift;
@@ -19,6 +15,8 @@ public class Plot.Layer : Object {
 	public Point top_left_point {get; set;}
 	public Point units {get; private set;}
 
+//	private signal void on_parameters_changes ();
+
 	public GenericArray<Shapes> children {get; set; default = new GenericArray<Shapes> ();}
 
 	public Layer (int id) {
@@ -27,7 +25,7 @@ public class Plot.Layer : Object {
 		// Default parameters
 		color_background = {1, 1, 1, 1};
 		color_border = {0, 0, 0, 1};
-		width = 330;
+		width = 4*cm;
 		height = 4*cm;
 		margin = {mm, 2*mm, 3*mm, mm};
 		top_left_point = {0, 0};
@@ -74,6 +72,7 @@ public class Plot.Layer : Object {
 			}
 		}
 		notify.connect (notify_cb);
+//		on_parameters_changes ();
 	}
 	public void save_to_file (KeyFile file) {
 		file.set_string (group_name, "color_background", color_background.to_string ());
@@ -160,5 +159,83 @@ public class Plot.Layer : Object {
 				}
 				break;
 		}
+	}
+	public void settings (Gtk.Stack stack) {
+		var layers_path_label = new Gtk.Label ("Path");
+		
+		var layers_color_background_label = new Gtk.Label ("Background color");
+		layers_color_background_label.halign = Gtk.Align.START;
+
+		var layers_color_background_button = new Gtk.ColorButton.with_rgba (color_background);
+		layers_color_background_button.halign = Gtk.Align.END;
+		layers_color_background_button.color_set.connect (() => {
+			color_background = layers_color_background_button.rgba;
+		});
+
+		var layers_color_background_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		layers_color_background_box.margin_start = layers_color_background_box.margin_end = 15;
+		layers_color_background_box.pack_start (layers_color_background_label);
+		layers_color_background_box.pack_start (layers_color_background_button);
+
+		var layers_color_border_label = new Gtk.Label ("Border color");
+		layers_color_border_label.halign = Gtk.Align.START;
+
+		var layers_color_border_button = new Gtk.ColorButton.with_rgba (color_border);
+		layers_color_border_button.halign = Gtk.Align.END;
+		layers_color_border_button.color_set.connect (() => {
+			color_border = layers_color_border_button.rgba;
+		});
+
+		var layers_color_border_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		layers_color_border_box.margin_start = layers_color_border_box.margin_end = 15;
+		layers_color_border_box.pack_start (layers_color_border_label);
+		layers_color_border_box.pack_start (layers_color_border_button);
+		
+		var width_label = new Gtk.Label ("Width");
+		width_label.halign = Gtk.Align.START;
+		
+		var width_spin_button = new Gtk.SpinButton.with_range (0, 10000, 10);
+		width_spin_button.halign = Gtk.Align.END;
+		width_spin_button.value = width;
+		width_spin_button.value_changed.connect (() => {
+			width = (int) width_spin_button.value;
+		});
+		
+		var width_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		width_box.margin_start = width_box.margin_end = 15;
+		width_box.pack_start (width_label);
+		width_box.pack_start (width_spin_button);
+
+		var list_box = new Gtk.ListBox ();
+		list_box.selection_mode = Gtk.SelectionMode.NONE;
+		list_box.add (layers_color_background_box);
+		list_box.add (layers_color_border_box);
+		list_box.add (width_box);
+		list_box.set_header_func ((row) => {
+			if (row.get_index () == 0) {
+				row.set_header (null);
+			} else if (row.get_header () == null) {
+				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+			}
+		});
+
+		var frame = new Gtk.Frame (null);
+		frame.shadow_type = Gtk.ShadowType.IN;
+		frame.valign = Gtk.Align.START;
+		frame.add (list_box);
+
+		var scroll = new Gtk.ScrolledWindow (null, null);
+		scroll.add (frame);
+
+		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
+		box.pack_start (layers_path_label, false, true);
+		box.pack_start (scroll, true, true);
+		
+//		plot_view.on_parameters_changes.connect (() => {
+//			layers_color_background_button.rgba = color_background;
+//			layers_color_grid_button.rgba = color_grid;
+//		});
+
+		stack.add_titled (box, "layer", @"Layer $id");
 	}
 }

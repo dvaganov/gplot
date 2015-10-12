@@ -1,8 +1,21 @@
 using Gtk;
 
 public class Plot.Window : Gtk.ApplicationWindow {
-	private View plot_view;
-	private Gtk.Stack plot_view_parameters_stack;
+	private Plot.View plot_view;
+	// Background parameters
+//	private Gtk.Label path_background_label;
+//	private Gtk.ColorButton color_background_button;
+//	private Gtk.ColorButton color_grid_button;
+//	private Gtk.Switch major_grid_switch;
+//	private Gtk.Switch minor_grid_switch;
+//	// Layers parameters
+//	private color_background;
+//	private color_border;
+//	private width;
+//	private height;
+//	private margin;
+//	private top_left_point;
+//	private units;
 
 	public Window () {
 		plot_view = new View ();
@@ -28,16 +41,42 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		box_btn.pack_start (btn_export);
 
 		// Plot view
-		var scroll_plot_view = new Gtk.ScrolledWindow (null, null);
-		scroll_plot_view.expand = true;
-		scroll_plot_view.min_content_width = 400;
-		scroll_plot_view.min_content_height = 400;
-		scroll_plot_view.add (plot_view);
+		var plot_view_parameters_stack = new Gtk.Stack ();
+		plot_view_parameters_stack.expand = true;
+		plot_view_parameters_stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
+
+		var plot_view_parameres_sidebar = new Gtk.StackSidebar ();
+		plot_view_parameres_sidebar.stack = plot_view_parameters_stack;
+
+		var plot_view_parameters_sidebar_frame = new Gtk.Frame (null);
+		plot_view_parameters_sidebar_frame.shadow_type = Gtk.ShadowType.IN;
+		plot_view_parameters_sidebar_frame.expand = false;
+		plot_view_parameters_sidebar_frame.valign = Gtk.Align.START;
+		plot_view_parameters_sidebar_frame.height_request = 100;
+		plot_view_parameters_sidebar_frame.add (plot_view_parameres_sidebar);
+
+		var plot_view_parameters_grid = new Gtk.Grid ();
+		plot_view_parameters_grid.expand = false;
+		plot_view_parameters_grid.width_request = 300;
+		plot_view_parameters_grid.margin = 15;
+		plot_view_parameters_grid.row_spacing = 15;
+		plot_view_parameters_grid.attach (plot_view_parameters_sidebar_frame, 0, 0);
+		plot_view_parameters_grid.attach (plot_view_parameters_stack, 0, 1);
+		
+		var plot_view_scroll = new Gtk.ScrolledWindow (null, null);
+		plot_view_scroll.expand = true;
+		plot_view_scroll.min_content_width = 400;
+		plot_view_scroll.min_content_height = 400;
+		plot_view_scroll.add (plot_view);
 
 		var plot_view_grid = new Gtk.Grid ();
-		plot_view_grid.expand = true;
-		plot_view_grid.attach (create_plot_view_left_box (), 0, 0);
-		plot_view_grid.attach (scroll_plot_view, 1, 0);
+		plot_view_grid.attach (plot_view_parameters_grid, 0, 0);
+		plot_view_grid.attach (plot_view_scroll, 1, 0);
+		
+		plot_view.settings (plot_view_parameters_stack);
+		for (var i = 0; i < plot_view.layers.length; i++) {
+			plot_view.layers.get (i).settings (plot_view_parameters_stack);
+		}
 
 		// Table view
 		var table_view_grid = new Gtk.Grid ();
@@ -58,127 +97,6 @@ public class Plot.Window : Gtk.ApplicationWindow {
 
 		set_titlebar (header_bar);
 		add (stack);
-	}
-	private Gtk.Box create_plot_view_left_box () {
-		plot_view_parameters_stack = new Gtk.Stack ();
-		plot_view_parameters_stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
-		set_plot_view_parameters_stack ();
-
-		var sidebar = new Gtk.StackSidebar ();
-		sidebar.stack = plot_view_parameters_stack;
-
-		var frame_sidebar = new Gtk.Frame (null);
-		frame_sidebar.shadow_type = Gtk.ShadowType.IN;
-		frame_sidebar.valign = Gtk.Align.START;
-		frame_sidebar.height_request = 100;
-		frame_sidebar.add (sidebar);
-
-		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
-		box.width_request = 300;
-		box.margin = 15;
-		box.pack_start (frame_sidebar, false, true);
-		box.pack_start (plot_view_parameters_stack);
-
-		return box;
-	}
-	private void set_plot_view_parameters_stack () {
-		var path_label = new Gtk.Label ("Path");
-
-		var color_label = new Gtk.Label ("Background color");
-		color_label.halign = Gtk.Align.START;
-
-		var color_button = new Gtk.ColorButton.with_rgba (plot_view.color_background);
-		color_button.halign = Gtk.Align.END;
-		color_button.color_set.connect (() => {
-			plot_view.color_background = color_button.rgba;
-		});
-
-		var color_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		color_box.margin_start = color_box.margin_end = 15;
-		color_box.pack_start (color_label);
-		color_box.pack_start (color_button);
-
-		var color_grid_label = new Gtk.Label ("Grid color");
-		color_grid_label.halign = Gtk.Align.START;
-
-		var color_grid_button = new Gtk.ColorButton.with_rgba (plot_view.color_grid);
-		color_grid_button.halign = Gtk.Align.END;
-		color_grid_button.color_set.connect (() => {
-			plot_view.color_grid = color_grid_button.rgba;
-		});
-
-		var color_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		color_grid_box.margin_start = color_grid_box.margin_end = 15;
-		color_grid_box.pack_start (color_grid_label);
-		color_grid_box.pack_start (color_grid_button);
-
-		var major_grid_label = new Gtk.Label ("Major grid");
-		major_grid_label.halign = Gtk.Align.START;
-
-		var major_grid_switch = new Gtk.Switch ();
-		major_grid_switch.halign = Gtk.Align.END;
-		major_grid_switch.active = plot_view.has_major_grid;
-		major_grid_switch.notify["active"].connect (() => {
-			if (major_grid_switch.active) {
-				plot_view.has_major_grid = true;
-			} else {
-				plot_view.has_major_grid = false;
-			}
-			plot_view.queue_draw ();
-		});
-
-		var major_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		major_grid_box.margin_start = major_grid_box.margin_end = 15;
-		major_grid_box.pack_start (major_grid_label);
-		major_grid_box.pack_start (major_grid_switch);
-
-		var minor_grid_label = new Gtk.Label ("Major grid");
-		minor_grid_label.halign = Gtk.Align.START;
-
-		var minor_grid_switch = new Gtk.Switch ();
-		minor_grid_switch.halign = Gtk.Align.END;
-		minor_grid_switch.active = plot_view.has_major_grid;
-		minor_grid_switch.notify["active"].connect (() => {
-			if (minor_grid_switch.active) {
-				plot_view.has_minor_grid = true;
-			} else {
-				plot_view.has_minor_grid = false;
-			}
-			plot_view.queue_draw ();
-		});
-
-		var minor_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		minor_grid_box.margin_start = minor_grid_box.margin_end = 15;
-		minor_grid_box.pack_start (minor_grid_label);
-		minor_grid_box.pack_start (minor_grid_switch);
-
-		var list_box = new Gtk.ListBox ();
-		list_box.selection_mode = Gtk.SelectionMode.NONE;
-		list_box.add (color_box);
-		list_box.add (color_grid_box);
-		list_box.add (major_grid_box);
-		list_box.add (minor_grid_box);
-		list_box.set_header_func ((row) => {
-			if (row.get_index () == 0) {
-				row.set_header (null);
-			} else if (row.get_header () == null) {
-				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-			}
-		});
-
-		var frame = new Frame (null);
-		frame.shadow_type = Gtk.ShadowType.IN;
-		frame.valign = Gtk.Align.START;
-		frame.add (list_box);
-
-		var scroll = new Gtk.ScrolledWindow (null, null);
-		scroll.add (frame);
-
-		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
-		box.pack_start (path_label, false, true);
-		box.pack_start (scroll, true, true);
-
-		plot_view_parameters_stack.add_titled (box, "background", "Background");
 	}
 	private void create_actions () {
 		var simple_action = new GLib.SimpleAction ("save", null);

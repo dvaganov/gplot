@@ -1,5 +1,3 @@
-using Gtk;
-
 public class Plot.Window : Gtk.ApplicationWindow {
 	private Plot.View plot_view;
 
@@ -8,16 +6,16 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		create_actions ();
 
 		// Header bar
-		var btn_save = new Button.from_icon_name ("document-save-symbolic");
-		btn_save.halign = Align.CENTER;
+		var btn_save = new Gtk.Button.from_icon_name ("document-save-symbolic");
+		btn_save.halign = Gtk.Align.CENTER;
 		btn_save.action_name = "win.save";
 
-		var btn_open = new Button.from_icon_name ("document-open-symbolic");
-		btn_open.halign = Align.CENTER;
+		var btn_open = new Gtk.Button.from_icon_name ("document-open-symbolic");
+		btn_open.halign = Gtk.Align.CENTER;
 		btn_open.action_name = "win.open";
 
-		var btn_export = new Button.from_icon_name ("document-save-as-symbolic");
-		btn_export.halign = Align.CENTER;
+		var btn_export = new Gtk.Button.from_icon_name ("document-save-as-symbolic");
+		btn_export.halign = Gtk.Align.CENTER;
 		btn_export.action_name = "win.export";
 
 		var box_btn = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
@@ -31,15 +29,15 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		plot_view_parameters_stack.expand = true;
 		plot_view_parameters_stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
 
-		var plot_view_parameres_sidebar = new Gtk.StackSidebar ();
-		plot_view_parameres_sidebar.stack = plot_view_parameters_stack;
+		var plot_view_parameters_sidebar = new Gtk.StackSidebar ();
+		plot_view_parameters_sidebar.stack = plot_view_parameters_stack;
 
 		var plot_view_parameters_sidebar_frame = new Gtk.Frame (null);
 		plot_view_parameters_sidebar_frame.shadow_type = Gtk.ShadowType.IN;
-		plot_view_parameters_sidebar_frame.expand = false;
-		plot_view_parameters_sidebar_frame.valign = Gtk.Align.START;
-		plot_view_parameters_sidebar_frame.height_request = 100;
-		plot_view_parameters_sidebar_frame.add (plot_view_parameres_sidebar);
+		plot_view_parameters_sidebar_frame.expand = true;
+//		plot_view_parameters_sidebar_frame.valign = Gtk.Align.START;
+//		plot_view_parameters_sidebar_frame.height_request = 100;
+		plot_view_parameters_sidebar_frame.add (plot_view_parameters_sidebar);
 
 		var plot_view_parameters_grid = new Gtk.Grid ();
 		plot_view_parameters_grid.expand = false;
@@ -63,6 +61,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		for (var i = 0; i < plot_view.layers.length; i++) {
 			plot_view.layers.get (i).settings (plot_view_parameters_stack);
 		}
+		
 
 		// Table view
 		var table_view_grid = new Gtk.Grid ();

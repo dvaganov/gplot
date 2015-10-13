@@ -2,20 +2,6 @@ using Gtk;
 
 public class Plot.Window : Gtk.ApplicationWindow {
 	private Plot.View plot_view;
-	// Background parameters
-//	private Gtk.Label path_background_label;
-//	private Gtk.ColorButton color_background_button;
-//	private Gtk.ColorButton color_grid_button;
-//	private Gtk.Switch major_grid_switch;
-//	private Gtk.Switch minor_grid_switch;
-//	// Layers parameters
-//	private color_background;
-//	private color_border;
-//	private width;
-//	private height;
-//	private margin;
-//	private top_left_point;
-//	private units;
 
 	public Window () {
 		plot_view = new View ();
@@ -62,7 +48,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		plot_view_parameters_grid.row_spacing = 15;
 		plot_view_parameters_grid.attach (plot_view_parameters_sidebar_frame, 0, 0);
 		plot_view_parameters_grid.attach (plot_view_parameters_stack, 0, 1);
-		
+
 		var plot_view_scroll = new Gtk.ScrolledWindow (null, null);
 		plot_view_scroll.expand = true;
 		plot_view_scroll.min_content_width = 400;
@@ -72,7 +58,7 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		var plot_view_grid = new Gtk.Grid ();
 		plot_view_grid.attach (plot_view_parameters_grid, 0, 0);
 		plot_view_grid.attach (plot_view_scroll, 1, 0);
-		
+
 		plot_view.settings (plot_view_parameters_stack);
 		for (var i = 0; i < plot_view.layers.length; i++) {
 			plot_view.layers.get (i).settings (plot_view_parameters_stack);

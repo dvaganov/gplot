@@ -18,6 +18,7 @@ public class Plot.Layer : Object {
 	public Point units {get; private set;}
 
 	public signal void redraw ();
+	public inline void redraw_child () {redraw ();}
 
 	public GenericArray<Shapes> children {get; set; default = new GenericArray<Shapes> ();}
 
@@ -29,12 +30,13 @@ public class Plot.Layer : Object {
 		color_border = {0, 0, 0, 1};
 		width = 4*cm;
 		height = 4*cm;
-		margin = {mm, 2*mm, 3*mm, mm};
+		margin = {mm, mm, mm, mm};
 		top_left_point = {0, 0};
 		priv_start_point = top_left_point;
 		units = {300, 360};
 		for (int i = 0; i < axes.length; i++) {
 			axes[i] = new Axes (id, (Axes.Orientation) i);
+			axes[i].redraw.connect (redraw_child);
 		}
 		// Inner calculations
 		shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
@@ -364,6 +366,9 @@ public class Plot.Layer : Object {
 		var scroll = new Gtk.ScrolledWindow (null, null);
 		scroll.add (box);
 
-		stack.add_titled (scroll, "layer", @"Layer $id");
+		stack.add_titled (scroll, group_name, @"Layer $id");
+		foreach (Plot.Axes _axes in axes) {
+			_axes.settings (stack);
+		}
 	}
 }

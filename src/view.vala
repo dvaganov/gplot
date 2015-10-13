@@ -6,7 +6,7 @@ public class Plot.View : Gtk.DrawingArea {
 	public Gdk.RGBA color_grid {get; set;}
 	public bool has_major_grid {get; set; default = true;}
 	public bool has_minor_grid {get; set; default = true;}
-	
+
 	public signal void on_parameters_changes ();
 
 	public GenericArray<Layer> layers {get; set; default = new GenericArray<Layer> ();}
@@ -14,6 +14,7 @@ public class Plot.View : Gtk.DrawingArea {
 	public View () {
 		group_name = "View:0:0";
 		layers.add (new Layer (0));
+		layers.get (0).redraw.connect (queue_draw);
 		color_background = {1,1,1,1};
 		_color_grid.parse ("#D3D7CF");
 		add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
@@ -52,15 +53,13 @@ public class Plot.View : Gtk.DrawingArea {
 		return true;
 	}
 	private void draw_in_context (Cairo.Context cr, double cr_width, double cr_height) {
-		draw_background (cr);
-		layers.get (0).draw (cr);
-	}
-	private void draw_background (Cairo.Context cr) {
-		// Draw background
 		cr.save ();
 		Gdk.cairo_set_source_rgba (cr, color_background);
 		cr.paint ();
 		cr.restore ();
+
+		layers.get (0).draw (cr);
+
 		// Draw major grid
 		if (has_major_grid) {
 			cr.save ();
@@ -231,7 +230,7 @@ public class Plot.View : Gtk.DrawingArea {
 
 		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
 		box.pack_start (scroll, true, true);
-		
+
 		on_parameters_changes.connect (() => {
 			color_background_button.rgba = color_background;
 			color_grid_button.rgba = color_grid;

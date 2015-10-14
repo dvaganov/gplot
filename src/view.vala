@@ -1,6 +1,6 @@
 public class Plot.View : Gtk.DrawingArea {
-	private Gdk.RGBA _color_background;
-	private Gdk.RGBA _color_grid;
+	private Gdk.RGBA color_background {get; set;}
+	private Gdk.RGBA color_grid {get; set;}
 
 	public string group_name {get; private set;}
 	public int width {get; private set;}
@@ -8,15 +8,13 @@ public class Plot.View : Gtk.DrawingArea {
 	public bool has_major_grid {get; set; default = true;}
 	public bool has_minor_grid {get; set; default = true;}
 
-	public signal void on_parameters_changes ();
-
 	public GenericArray<Layer> layers {get; set; default = new GenericArray<Layer> ();}
 
 	public View () {
 		group_name = "View:0:0";
 		layers.add (new Layer (0));
-		layers.get (0).redraw.connect (queue_draw);
-		_color_background = {1,1,1,1};
+		layers.get (0).redraw = queue_draw;
+		color_background = {1,1,1,1};
 		_color_grid.parse ("#D3D7CF");
 		add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
 		button_press_event.connect (button_press_event_cb);
@@ -55,7 +53,7 @@ public class Plot.View : Gtk.DrawingArea {
 	}
 	private void draw_in_context (Cairo.Context cr, double cr_width, double cr_height) {
 		cr.save ();
-		Gdk.cairo_set_source_rgba (cr, _color_background);
+		Gdk.cairo_set_source_rgba (cr, color_background);
 		cr.paint ();
 		cr.restore ();
 
@@ -64,7 +62,7 @@ public class Plot.View : Gtk.DrawingArea {
 		// Draw major grid
 		if (has_major_grid) {
 			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, _color_grid);
+			Gdk.cairo_set_source_rgba (cr, color_grid);
 			cr.set_line_width (1);
 			for (int i = 0; i < get_allocated_width () / cm + 1; i++) {
 				cr.move_to (i*cm, 0);
@@ -80,7 +78,7 @@ public class Plot.View : Gtk.DrawingArea {
 		// Draw minor grid
 		if (has_minor_grid) {
 			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, _color_grid);
+			Gdk.cairo_set_source_rgba (cr, color_grid);
 			cr.set_line_width (0.5);
 			for (int i = 0; i < get_allocated_width () / mm + 1; i++) {
 				cr.move_to (i*mm, 0);
@@ -107,8 +105,8 @@ public class Plot.View : Gtk.DrawingArea {
 		draw_in_context (export_context, width, height);
 	}
 	public void save_to_file (KeyFile file) {
-		file.set_string (group_name, "color_background", _color_background.to_string ());
-		file.set_string (group_name, "color_grid", _color_grid.to_string ());
+		file.set_string (group_name, "color_background", color_background.to_string ());
+		file.set_string (group_name, "color_grid", color_grid.to_string ());
 		file.set_boolean (group_name, "has_major_grid", has_major_grid);
 		file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
 		for (int i = 0; i < layers.length; i++) {
@@ -122,7 +120,7 @@ public class Plot.View : Gtk.DrawingArea {
 			has_major_grid = file.get_boolean (group_name, "has_major_grid");
 			has_minor_grid = file.get_boolean (group_name, "has_minor_grid");
 			layers.remove_range (0, layers.length);
-			on_parameters_changes ();
+//			queue_draw ();
 		} catch (KeyFileError err) {
 			print (@"$group_name: $(err.message)\n");
 		}
@@ -139,80 +137,12 @@ public class Plot.View : Gtk.DrawingArea {
 		queue_draw ();
 	}
 	public void settings (Gtk.Stack stack) {
-		/*var color_background_label = new Gtk.Label ("Background color");
-		color_background_label.halign = Gtk.Align.START;
-
-		var color_background_button = new Gtk.ColorButton.with_rgba (color_background);
-		color_background_button.halign = Gtk.Align.END;
-		color_background_button.color_set.connect (() => {
-			color_background = color_background_button.rgba;
-		});
-
-		var color_background_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		color_background_box.margin_start = color_background_box.margin_end = 15;
-		color_background_box.pack_start (color_background_label);
-		color_background_box.pack_start (color_background_button);
-
-		var color_grid_label = new Gtk.Label ("Grid color");
-		color_grid_label.halign = Gtk.Align.START;
-
-		var color_grid_button = new Gtk.ColorButton.with_rgba (color_grid);
-		color_grid_button.halign = Gtk.Align.END;
-		color_grid_button.color_set.connect (() => {
-			color_grid = color_grid_button.rgba;
-		});
-
-		var color_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		color_grid_box.margin_start = color_grid_box.margin_end = 15;
-		color_grid_box.pack_start (color_grid_label);
-		color_grid_box.pack_start (color_grid_button);*/
-
-		var major_grid_label = new Gtk.Label ("Major grid");
-		major_grid_label.halign = Gtk.Align.START;
-
-		var major_grid_switch = new Gtk.Switch ();
-		major_grid_switch.halign = Gtk.Align.END;
-		major_grid_switch.active = has_major_grid;
-		major_grid_switch.notify["active"].connect (() => {
-			if (major_grid_switch.active) {
-				has_major_grid = true;
-			} else {
-				has_major_grid = false;
-			}
-			queue_draw ();
-		});
-
-		var major_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		major_grid_box.margin_start = major_grid_box.margin_end = 15;
-		major_grid_box.pack_start (major_grid_label);
-		major_grid_box.pack_start (major_grid_switch);
-
-		var minor_grid_label = new Gtk.Label ("Major grid");
-		minor_grid_label.halign = Gtk.Align.START;
-
-		var minor_grid_switch = new Gtk.Switch ();
-		minor_grid_switch.halign = Gtk.Align.END;
-		minor_grid_switch.active = has_minor_grid;
-		minor_grid_switch.notify["active"].connect (() => {
-			if (minor_grid_switch.active) {
-				has_minor_grid = true;
-			} else {
-				has_minor_grid = false;
-			}
-			queue_draw ();
-		});
-
-		var minor_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		minor_grid_box.margin_start = minor_grid_box.margin_end = 15;
-		minor_grid_box.pack_start (minor_grid_label);
-		minor_grid_box.pack_start (minor_grid_switch);
-
 		var list_box = new Gtk.ListBox ();
 		list_box.selection_mode = Gtk.SelectionMode.NONE;
 		list_box.add (create_color_box ("Background color", &_color_background));
 		list_box.add (create_color_box ("Grid color", &_color_grid));
-		list_box.add (major_grid_box);
-		list_box.add (minor_grid_box);
+		list_box.add (create_boolean_box ("Major grid", &_has_major_grid, () => queue_draw ()));
+		list_box.add (create_boolean_box ("Minor grid", &_has_minor_grid, () => queue_draw ()));
 		list_box.set_header_func ((row) => {
 			if (row.get_index () == 0) {
 				row.set_header (null);
@@ -220,25 +150,17 @@ public class Plot.View : Gtk.DrawingArea {
 				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
 			}
 		});
-
 		var frame = new Gtk.Frame (null);
 		frame.shadow_type = Gtk.ShadowType.IN;
 		frame.valign = Gtk.Align.START;
 		frame.add (list_box);
+		
+		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
+		box.pack_start (frame);
 
 		var scroll = new Gtk.ScrolledWindow (null, null);
-		scroll.add (frame);
+		scroll.add (box);
 
-		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
-		box.pack_start (scroll, true, true);
-
-		on_parameters_changes.connect (() => {
-			//color_background_button.rgba = color_background;
-			//color_grid_button.rgba = color_grid;
-			major_grid_switch.active = has_major_grid;
-			minor_grid_switch.active = has_minor_grid;
-		});
-
-		stack.add_titled (box, "background", "Background");
+		stack.add_titled (scroll, "background", "Background");
 	}
 }

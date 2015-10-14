@@ -2,23 +2,20 @@ public class Plot.Layer : Object {
 	private Point priv_start_point;
 	private Point shift;
 	private Point scale;
-	private Gdk.RGBA _color_background;
-	private Gdk.RGBA _color_border;
-
-//	private signal void on_parameters_changes ();
+	private Gdk.RGBA color_background {get; set;}
+	private Gdk.RGBA color_border {get; set;}
 
 	public uint id {get; set;}
 	public string group_name {get; construct set;}
+	public Point top_left_point {get; set;}
 	public int width {get; set;}
 	public int height {get; set;}
 	public int[] margin {get; set; default = new int[4];}
 	public Axes[] axes {get; private set; default = new Axes[4];}
 	// Coordinates parameters
-	public Point top_left_point {get; set;}
 	public Point units {get; private set;}
 
-	public signal void redraw ();
-	public inline void redraw_child () {redraw ();}
+	public unowned RedrawFunc redraw {private get; set;}
 
 	public GenericArray<Shapes> children {get; set; default = new GenericArray<Shapes> ();}
 
@@ -26,8 +23,8 @@ public class Plot.Layer : Object {
 		this.id = id;
 		group_name = @"Layer:0:$id";
 		// Default parameters
-		_color_background = {1, 1, 1, 1};
-		_color_border = {0, 0, 0, 1};
+		color_background = {1, 1, 1, 1};
+		color_border = {0, 0, 0, 1};
 		width = 4*cm;
 		height = 4*cm;
 		margin = {mm, mm, mm, mm};
@@ -36,7 +33,7 @@ public class Plot.Layer : Object {
 		units = {300, 360};
 		for (int i = 0; i < axes.length; i++) {
 			axes[i] = new Axes (id, (Axes.Orientation) i);
-			axes[i].redraw.connect (redraw_child);
+			axes[i].redraw = () => redraw ();
 		}
 		// Inner calculations
 		shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
@@ -76,11 +73,10 @@ public class Plot.Layer : Object {
 			}
 		}
 		notify.connect (notify_cb);
-//		on_parameters_changes ();
 	}
 	public void save_to_file (KeyFile file) {
-		file.set_string (group_name, "color_background", _color_background.to_string ());
-		file.set_string (group_name, "color_border", _color_border.to_string ());
+		file.set_string (group_name, "color_background", color_background.to_string ());
+		file.set_string (group_name, "color_border", color_border.to_string ());
 		file.set_integer (group_name, "width", width);
 		file.set_integer (group_name, "height", height);
 		file.set_integer_list (group_name, "margin", margin);
@@ -110,12 +106,12 @@ public class Plot.Layer : Object {
 	public void draw (Cairo.Context cr) {
 		// Draw background and border
 		cr.save ();
-		Gdk.cairo_set_source_rgba (cr, _color_background);
+		Gdk.cairo_set_source_rgba (cr, color_background);
 		cr.rectangle (top_left_point.x, top_left_point.y, width, height);
 		cr.fill_preserve ();
 		cr.restore ();
 		cr.save ();
-		Gdk.cairo_set_source_rgba (cr, _color_border);
+		Gdk.cairo_set_source_rgba (cr, color_border);
 		cr.set_line_width (1);
 		cr.stroke ();
 		cr.restore ();
@@ -165,182 +161,50 @@ public class Plot.Layer : Object {
 		}
 	}
 	public void settings (Gtk.Stack stack) {
-		var layers_path_label = new Gtk.Label ("Path");
-
-		/*var width_label = new Gtk.Label ("Width, px");
-		width_label.halign = Gtk.Align.START;
-
-		var width_spin_button = new Gtk.SpinButton.with_range (0, 10000, 10);
-		width_spin_button.halign = Gtk.Align.END;
-		width_spin_button.value = width;
-		width_spin_button.value_changed.connect (() => {
-			width = (int) width_spin_button.value;
-			redraw ();
-		});
-
-		var width_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		width_box.margin_start = width_box.margin_end = 15;
-		width_box.pack_start (width_label);
-		width_box.pack_start (width_spin_button);*/
-
-		var width_box = create_spin_box_int ("Width, px", &_width, 0, 10000, 10);
-
-		var height_label = new Gtk.Label ("Height, px");
-		height_label.halign = Gtk.Align.START;
-
-		var height_spin_button = new Gtk.SpinButton.with_range (0, 10000, 10);
-		height_spin_button.halign = Gtk.Align.END;
-		height_spin_button.value = height;
-		height_spin_button.value_changed.connect (() => {
-			height = (int) height_spin_button.value;
-			redraw ();
-		});
-
-		var height_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		height_box.margin_start = height_box.margin_end = 15;
-		height_box.pack_start (height_label);
-		height_box.pack_start (height_spin_button);
-
-		var list_box_0 = new Gtk.ListBox ();
-		list_box_0.selection_mode = Gtk.SelectionMode.NONE;
-		list_box_0.add (create_color_box ("Background color", &_color_background));
-		list_box_0.add (create_color_box ("Border color", &_color_border));
-		list_box_0.add (width_box);
-		list_box_0.add (height_box);
-		list_box_0.set_header_func ((row) => {
-			if (row.get_index () == 0) {
-				row.set_header (null);
-			} else if (row.get_header () == null) {
-				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-			}
-		});
-
-		var frame_0 = new Gtk.Frame (null);
-		frame_0.shadow_type = Gtk.ShadowType.IN;
-		frame_0.valign = Gtk.Align.START;
-		frame_0.add (list_box_0);
-
+		Gtk.ListBox list_box[3];
+		for (int i = 0; i < list_box.length; i++) {
+			list_box[i] = new Gtk.ListBox ();
+			list_box[i].selection_mode = Gtk.SelectionMode.NONE;
+			list_box[i].set_header_func ((row) => {
+				if (row.get_index () == 0) {
+					row.set_header (null);
+				} else if (row.get_header () == null) {
+					row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
+				}
+			});
+		}
+		// General
+		list_box[0].add (create_color_box ("Background color", &_color_background));
+		list_box[0].add (create_color_box ("Border color", &_color_border));
+		list_box[0].add (create_spin_box_int ("Width, px", &_width, 0, 10000, 10, redraw));
+		list_box[0].add (create_spin_box_int ("Height, px", &_height, 0, 10000, 10, redraw));
 		// Position
-		var label_1 = new Gtk.Label ("Position");
-
-		var position_left_label = new Gtk.Label ("Left, px");
-		position_left_label.halign = Gtk.Align.START;
-
-		var position_left_spin_button = new Gtk.SpinButton.with_range (0, 10000, 10);
-		position_left_spin_button.halign = Gtk.Align.END;
-		position_left_spin_button.value = top_left_point.x;
-		position_left_spin_button.value_changed.connect ((widget) => {
-			top_left_point = Plot.Point () {x = widget.value, y = top_left_point.y};
-			redraw ();
-		});
-
-		var position_left_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		position_left_box.margin_start = position_left_box.margin_end = 15;
-		position_left_box.pack_start (position_left_label);
-		position_left_box.pack_start (position_left_spin_button);
-
-		var position_top_label = new Gtk.Label ("Top, px");
-		position_top_label.halign = Gtk.Align.START;
-
-		var position_top_spin_button = new Gtk.SpinButton.with_range (0, 10000, 10);
-		position_top_spin_button.halign = Gtk.Align.END;
-		position_top_spin_button.value = top_left_point.y;
-		position_top_spin_button.value_changed.connect ((widget) => {
-			top_left_point = Plot.Point () {x = top_left_point.x, y = widget.value};
-			redraw ();
-		});
-
-		var position_top_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		position_top_box.margin_start = position_top_box.margin_end = 15;
-		position_top_box.pack_start (position_top_label);
-		position_top_box.pack_start (position_top_spin_button);
-
-		var list_box_1 = new Gtk.ListBox ();
-		list_box_1.selection_mode = Gtk.SelectionMode.NONE;
-		list_box_1.add (position_left_box);
-		list_box_1.add (position_top_box);
-		list_box_1.set_header_func ((row) => {
-			if (row.get_index () == 0) {
-				row.set_header (null);
-			} else if (row.get_header () == null) {
-				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-			}
-		});
-
-		var frame_1 = new Gtk.Frame (null);
-		frame_1.shadow_type = Gtk.ShadowType.IN;
-		frame_1.valign = Gtk.Align.START;
-		frame_1.add (list_box_1);
-
+		list_box[1].add (create_spin_box_double ("Left, px", &_top_left_point.x, 0, 10000, 10, redraw));
+		list_box[1].add (create_spin_box_double ("Top, px", &_top_left_point.y, 0, 10000, 10, redraw));
 		// Margins
 		string margin_names[4] = {"Left", "Right", "Bottom", "Top"};
-		Gtk.Label margin_labels[4];
-		Gtk.SpinButton margin_spin_button[4];
-		Gtk.Box margin_box[4];
-
-		for (int i = 0; i < 4; i++) {
-			margin_labels[i] = new Gtk.Label (@"$(margin_names[i]), px");
-			margin_labels[i].halign = Gtk.Align.START;
-
-			margin_spin_button[i] = new Gtk.SpinButton.with_range (0, 10000, 10);
-			margin_spin_button[i].halign = Gtk.Align.END;
-			margin_spin_button[i].value = margin[i];
-
-			margin_box[i] = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-			margin_box[i].margin_start = margin_box[i].margin_end = 15;
-			margin_box[i].pack_start (margin_labels[i]);
-			margin_box[i].pack_start (margin_spin_button[i]);
+		for (var i = 0; i < margin.length; i++) {
+			list_box[2].add (create_spin_box_int (margin_names[i], &_margin[i], 0, 10000, 10, redraw));
 		}
-		margin_spin_button[0].value_changed.connect ((widget) => {
-			margin[0] = (int) widget.value;
-			redraw ();
-		});
-		margin_spin_button[1].value_changed.connect ((widget) => {
-			margin[1] = (int) widget.value;
-			redraw ();
-		});
-		margin_spin_button[2].value_changed.connect ((widget) => {
-			margin[2] = (int) widget.value;
-			redraw ();
-		});
-		margin_spin_button[3].value_changed.connect ((widget) => {
-			margin[3] = (int) widget.value;
-			redraw ();
-		});
-
-
-		var label_2 = new Gtk.Label ("Margins");
-
-		var list_box_2 = new Gtk.ListBox ();
-		list_box_2.selection_mode = Gtk.SelectionMode.NONE;
-		foreach (unowned Gtk.Box _box in margin_box) {
-			list_box_2.add (_box);
-		}
-		list_box_2.set_header_func ((row) => {
-			if (row.get_index () == 0) {
-				row.set_header (null);
-			} else if (row.get_header () == null) {
-				row.set_header (new Gtk.Separator (Gtk.Orientation.HORIZONTAL));
-			}
-		});
-
-		var frame_2 = new Gtk.Frame (null);
-		frame_2.shadow_type = Gtk.ShadowType.IN;
-		frame_2.valign = Gtk.Align.START;
-		frame_2.add (list_box_2);
-
+		// Add to box
 		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
-		box.pack_start (layers_path_label, false);
-		box.pack_start (frame_0, false);
-		box.pack_start (label_1, false);
-		box.pack_start (frame_1, false);
-		box.pack_start (label_2, false);
-		box.pack_start (frame_2, false);
-
+		Gtk.Frame frame;
+		string? titles[3] = {null, "Position", "Margins"};
+		for (var i = 0; i < list_box.length; i++) {
+			frame = new Gtk.Frame (null);
+			frame.shadow_type = Gtk.ShadowType.IN;
+			frame.valign = Gtk.Align.START;
+			frame.add (list_box[i]);
+			if (titles[i] != null) {
+				box.pack_start (new Gtk.Label (titles[i]));
+			}
+			box.pack_start (frame, false);
+		}
+		// Add to stack
 		var scroll = new Gtk.ScrolledWindow (null, null);
 		scroll.add (box);
-
 		stack.add_titled (scroll, group_name, @"Layer $id");
+		// Create settings for children
 		foreach (Plot.Axes _axes in axes) {
 			_axes.settings (stack);
 		}

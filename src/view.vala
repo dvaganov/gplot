@@ -1,9 +1,10 @@
 public class Plot.View : Gtk.DrawingArea {
+	private Gdk.RGBA _color_background;
+	private Gdk.RGBA _color_grid;
+
 	public string group_name {get; private set;}
 	public int width {get; private set;}
 	public int height {get; private set;}
-	public Gdk.RGBA color_background {get; set;}
-	public Gdk.RGBA color_grid {get; set;}
 	public bool has_major_grid {get; set; default = true;}
 	public bool has_minor_grid {get; set; default = true;}
 
@@ -15,7 +16,7 @@ public class Plot.View : Gtk.DrawingArea {
 		group_name = "View:0:0";
 		layers.add (new Layer (0));
 		layers.get (0).redraw.connect (queue_draw);
-		color_background = {1,1,1,1};
+		_color_background = {1,1,1,1};
 		_color_grid.parse ("#D3D7CF");
 		add_events (Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK | Gdk.EventMask.POINTER_MOTION_MASK);
 		button_press_event.connect (button_press_event_cb);
@@ -54,7 +55,7 @@ public class Plot.View : Gtk.DrawingArea {
 	}
 	private void draw_in_context (Cairo.Context cr, double cr_width, double cr_height) {
 		cr.save ();
-		Gdk.cairo_set_source_rgba (cr, color_background);
+		Gdk.cairo_set_source_rgba (cr, _color_background);
 		cr.paint ();
 		cr.restore ();
 
@@ -63,7 +64,7 @@ public class Plot.View : Gtk.DrawingArea {
 		// Draw major grid
 		if (has_major_grid) {
 			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, color_grid);
+			Gdk.cairo_set_source_rgba (cr, _color_grid);
 			cr.set_line_width (1);
 			for (int i = 0; i < get_allocated_width () / cm + 1; i++) {
 				cr.move_to (i*cm, 0);
@@ -79,7 +80,7 @@ public class Plot.View : Gtk.DrawingArea {
 		// Draw minor grid
 		if (has_minor_grid) {
 			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, color_grid);
+			Gdk.cairo_set_source_rgba (cr, _color_grid);
 			cr.set_line_width (0.5);
 			for (int i = 0; i < get_allocated_width () / mm + 1; i++) {
 				cr.move_to (i*mm, 0);
@@ -106,8 +107,8 @@ public class Plot.View : Gtk.DrawingArea {
 		draw_in_context (export_context, width, height);
 	}
 	public void save_to_file (KeyFile file) {
-		file.set_string (group_name, "color_background", color_background.to_string ());
-		file.set_string (group_name, "color_grid", color_grid.to_string ());
+		file.set_string (group_name, "color_background", _color_background.to_string ());
+		file.set_string (group_name, "color_grid", _color_grid.to_string ());
 		file.set_boolean (group_name, "has_major_grid", has_major_grid);
 		file.set_boolean (group_name, "has_minor_grid", has_minor_grid);
 		for (int i = 0; i < layers.length; i++) {
@@ -138,7 +139,7 @@ public class Plot.View : Gtk.DrawingArea {
 		queue_draw ();
 	}
 	public void settings (Gtk.Stack stack) {
-		var color_background_label = new Gtk.Label ("Background color");
+		/*var color_background_label = new Gtk.Label ("Background color");
 		color_background_label.halign = Gtk.Align.START;
 
 		var color_background_button = new Gtk.ColorButton.with_rgba (color_background);
@@ -164,7 +165,7 @@ public class Plot.View : Gtk.DrawingArea {
 		var color_grid_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 		color_grid_box.margin_start = color_grid_box.margin_end = 15;
 		color_grid_box.pack_start (color_grid_label);
-		color_grid_box.pack_start (color_grid_button);
+		color_grid_box.pack_start (color_grid_button);*/
 
 		var major_grid_label = new Gtk.Label ("Major grid");
 		major_grid_label.halign = Gtk.Align.START;
@@ -208,8 +209,8 @@ public class Plot.View : Gtk.DrawingArea {
 
 		var list_box = new Gtk.ListBox ();
 		list_box.selection_mode = Gtk.SelectionMode.NONE;
-		list_box.add (color_background_box);
-		list_box.add (color_grid_box);
+		list_box.add (create_color_box ("Background color", &_color_background));
+		list_box.add (create_color_box ("Grid color", &_color_grid));
 		list_box.add (major_grid_box);
 		list_box.add (minor_grid_box);
 		list_box.set_header_func ((row) => {
@@ -232,8 +233,8 @@ public class Plot.View : Gtk.DrawingArea {
 		box.pack_start (scroll, true, true);
 
 		on_parameters_changes.connect (() => {
-			color_background_button.rgba = color_background;
-			color_grid_button.rgba = color_grid;
+			//color_background_button.rgba = color_background;
+			//color_grid_button.rgba = color_grid;
 			major_grid_switch.active = has_major_grid;
 			minor_grid_switch.active = has_minor_grid;
 		});

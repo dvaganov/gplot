@@ -2,13 +2,13 @@ public class Plot.Layer : Object {
 	private Point priv_start_point;
 	private Point shift;
 	private Point scale;
+	private Gdk.RGBA _color_background;
+	private Gdk.RGBA _color_border;
 
 //	private signal void on_parameters_changes ();
 
 	public uint id {get; set;}
 	public string group_name {get; construct set;}
-	public Gdk.RGBA color_background {get; set;}
-	public Gdk.RGBA color_border {get; set;}
 	public int width {get; set;}
 	public int height {get; set;}
 	public int[] margin {get; set; default = new int[4];}
@@ -26,8 +26,8 @@ public class Plot.Layer : Object {
 		this.id = id;
 		group_name = @"Layer:0:$id";
 		// Default parameters
-		color_background = {1, 1, 1, 1};
-		color_border = {0, 0, 0, 1};
+		_color_background = {1, 1, 1, 1};
+		_color_border = {0, 0, 0, 1};
 		width = 4*cm;
 		height = 4*cm;
 		margin = {mm, mm, mm, mm};
@@ -79,8 +79,8 @@ public class Plot.Layer : Object {
 //		on_parameters_changes ();
 	}
 	public void save_to_file (KeyFile file) {
-		file.set_string (group_name, "color_background", color_background.to_string ());
-		file.set_string (group_name, "color_border", color_border.to_string ());
+		file.set_string (group_name, "color_background", _color_background.to_string ());
+		file.set_string (group_name, "color_border", _color_border.to_string ());
 		file.set_integer (group_name, "width", width);
 		file.set_integer (group_name, "height", height);
 		file.set_integer_list (group_name, "margin", margin);
@@ -110,12 +110,12 @@ public class Plot.Layer : Object {
 	public void draw (Cairo.Context cr) {
 		// Draw background and border
 		cr.save ();
-		Gdk.cairo_set_source_rgba (cr, color_background);
+		Gdk.cairo_set_source_rgba (cr, _color_background);
 		cr.rectangle (top_left_point.x, top_left_point.y, width, height);
 		cr.fill_preserve ();
 		cr.restore ();
 		cr.save ();
-		Gdk.cairo_set_source_rgba (cr, color_border);
+		Gdk.cairo_set_source_rgba (cr, _color_border);
 		cr.set_line_width (1);
 		cr.stroke ();
 		cr.restore ();
@@ -167,35 +167,7 @@ public class Plot.Layer : Object {
 	public void settings (Gtk.Stack stack) {
 		var layers_path_label = new Gtk.Label ("Path");
 
-		var layers_color_background_label = new Gtk.Label ("Background color");
-		layers_color_background_label.halign = Gtk.Align.START;
-
-		var layers_color_background_button = new Gtk.ColorButton.with_rgba (color_background);
-		layers_color_background_button.halign = Gtk.Align.END;
-		layers_color_background_button.color_set.connect (() => {
-			color_background = layers_color_background_button.rgba;
-		});
-
-		var layers_color_background_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		layers_color_background_box.margin_start = layers_color_background_box.margin_end = 15;
-		layers_color_background_box.pack_start (layers_color_background_label);
-		layers_color_background_box.pack_start (layers_color_background_button);
-
-		var layers_color_border_label = new Gtk.Label ("Border color");
-		layers_color_border_label.halign = Gtk.Align.START;
-
-		var layers_color_border_button = new Gtk.ColorButton.with_rgba (color_border);
-		layers_color_border_button.halign = Gtk.Align.END;
-		layers_color_border_button.color_set.connect (() => {
-			color_border = layers_color_border_button.rgba;
-		});
-
-		var layers_color_border_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		layers_color_border_box.margin_start = layers_color_border_box.margin_end = 15;
-		layers_color_border_box.pack_start (layers_color_border_label);
-		layers_color_border_box.pack_start (layers_color_border_button);
-
-		var width_label = new Gtk.Label ("Width, px");
+		/*var width_label = new Gtk.Label ("Width, px");
 		width_label.halign = Gtk.Align.START;
 
 		var width_spin_button = new Gtk.SpinButton.with_range (0, 10000, 10);
@@ -209,7 +181,9 @@ public class Plot.Layer : Object {
 		var width_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 		width_box.margin_start = width_box.margin_end = 15;
 		width_box.pack_start (width_label);
-		width_box.pack_start (width_spin_button);
+		width_box.pack_start (width_spin_button);*/
+
+		var width_box = create_spin_box_int ("Width, px", &_width, 0, 10000, 10);
 
 		var height_label = new Gtk.Label ("Height, px");
 		height_label.halign = Gtk.Align.START;
@@ -229,8 +203,8 @@ public class Plot.Layer : Object {
 
 		var list_box_0 = new Gtk.ListBox ();
 		list_box_0.selection_mode = Gtk.SelectionMode.NONE;
-		list_box_0.add (layers_color_background_box);
-		list_box_0.add (layers_color_border_box);
+		list_box_0.add (create_color_box ("Background color", &_color_background));
+		list_box_0.add (create_color_box ("Border color", &_color_border));
 		list_box_0.add (width_box);
 		list_box_0.add (height_box);
 		list_box_0.set_header_func ((row) => {

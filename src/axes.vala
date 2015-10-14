@@ -25,10 +25,10 @@ public class Plot.Axes : Object {
 	public int id {get; construct set;}
 	public string group_name {get; construct set;}
 	// Axes parameters
+	private Gdk.RGBA _color;
 	private Orientation orientation {get; private set;}
 	public double length {get; set;}
 	public Point position {get; set;}
-	public Gdk.RGBA color {get; set;}
 	public bool visible {get; set; default = true;}
 	public double zero_point {get; set;}
 	public string caption {get; set; default = "";}
@@ -46,7 +46,7 @@ public class Plot.Axes : Object {
 		group_name = @"Axes:$parent_id:$id";
 		this.orientation = orientation;
 		position = {0, 0};
-		color = {0,0,0,1.0};
+		_color = {0,0,0,1.0};
 	}
 	public Axes.from_file (KeyFile file, uint parent_id, uint id) {
 		group_name = @"Axes:$parent_id:$id";
@@ -70,7 +70,7 @@ public class Plot.Axes : Object {
 		}
 	}
 	public void save_to_file (KeyFile file) {
-		file.set_string (group_name, "color", color.to_string ());
+		file.set_string (group_name, "color", _color.to_string ());
 		file.set_boolean (group_name, "visible", visible);
 		// Axes parameters
 		file.set_double (group_name, "length", length);
@@ -87,7 +87,7 @@ public class Plot.Axes : Object {
 	public void draw (Cairo.Context cr) {
 		if (visible) {
 			cr.save ();
-			Gdk.cairo_set_source_rgba (cr, color);
+			Gdk.cairo_set_source_rgba (cr, _color);
 			cr.set_line_width (1);
 			// Draw ticks
 			double tick_amount = major_tick + minor_tick * (major_tick - 1);
@@ -207,8 +207,8 @@ public class Plot.Axes : Object {
 		var visible_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 		visible_box.pack_start (visible_label);
 		visible_box.pack_start (visible_switch);
-	
-		var color_label = new Gtk.Label ("Line color");
+
+		/*var color_label = new Gtk.Label ("Line color");
 		color_label.halign = Gtk.Align.START;
 		color_label.margin_start = 15;
 
@@ -221,8 +221,8 @@ public class Plot.Axes : Object {
 
 		var color_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 		color_box.pack_start (color_label);
-		color_box.pack_start (color_button);
-		
+		color_box.pack_start (color_button);*/
+
 		var major_tick_label = new Gtk.Label ("Major tick");
 		major_tick_label.halign = Gtk.Align.START;
 		major_tick_label.margin_start = 15;
@@ -239,11 +239,11 @@ public class Plot.Axes : Object {
 		var major_tick_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 		major_tick_box.pack_start (major_tick_label);
 		major_tick_box.pack_start (major_tick_spin_button);
-		
+
 		var list_box_0 = new Gtk.ListBox ();
 		list_box_0.selection_mode = Gtk.SelectionMode.NONE;
 		list_box_0.add (visible_box);
-		list_box_0.add (color_box);
+		list_box_0.add (create_color_box ("Line color", &_color));
 		list_box_0.add (major_tick_box);
 		list_box_0.set_header_func ((row) => {
 			if (row.get_index () == 0) {
@@ -257,7 +257,7 @@ public class Plot.Axes : Object {
 		frame_0.shadow_type = Gtk.ShadowType.IN;
 		frame_0.valign = Gtk.Align.START;
 		frame_0.add (list_box_0);
-		
+
 		var tick_type_none_button = new Gtk.RadioButton.with_label (null, "None");
 		tick_type_none_button.toggled.connect ((btn) => {
 			if (tick_type != TickType.NONE) {
@@ -286,7 +286,7 @@ public class Plot.Axes : Object {
 				redraw ();
 			}
 		});
-		
+
 		switch (tick_type) {
 			case TickType.NONE:
 				tick_type_none_button.active = true;
@@ -301,13 +301,13 @@ public class Plot.Axes : Object {
 				tick_type_out_button.active = true;
 				break;
 		}
-		
+
 		var tick_type_grid = new Gtk.Grid ();
 		tick_type_grid.attach (tick_type_none_button, 0, 0);
 		tick_type_grid.attach (tick_type_both_button, 1, 0);
 		tick_type_grid.attach (tick_type_in_button, 0, 1);
 		tick_type_grid.attach (tick_type_out_button, 1, 1);
-		
+
 		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
 		box.pack_start (tick_type_grid, false);
 		box.pack_start (frame_0, false);

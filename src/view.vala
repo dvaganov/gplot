@@ -139,10 +139,10 @@ public class Plot.View : Gtk.DrawingArea {
 	public void settings (Gtk.Stack stack) {
 		var list_box = new Gtk.ListBox ();
 		list_box.selection_mode = Gtk.SelectionMode.NONE;
-		list_box.add (create_color_box ("Background color", &_color_background));
-		list_box.add (create_color_box ("Grid color", &_color_grid));
-		list_box.add (create_boolean_box ("Major grid", &_has_major_grid, () => queue_draw ()));
-		list_box.add (create_boolean_box ("Minor grid", &_has_minor_grid, () => queue_draw ()));
+		list_box.add (create_box_with_color_btn ("Background color", &_color_background));
+		list_box.add (create_box_with_color_btn ("Grid color", &_color_grid));
+		list_box.add (create_box_with_switch ("Major grid", &_has_major_grid, () => queue_draw ()));
+		list_box.add (create_box_with_switch ("Minor grid", &_has_minor_grid, () => queue_draw ()));
 		list_box.set_header_func ((row) => {
 			if (row.get_index () == 0) {
 				row.set_header (null);
@@ -154,7 +154,7 @@ public class Plot.View : Gtk.DrawingArea {
 		frame.shadow_type = Gtk.ShadowType.IN;
 		frame.valign = Gtk.Align.START;
 		frame.add (list_box);
-		
+
 		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
 		box.pack_start (frame);
 

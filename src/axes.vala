@@ -214,17 +214,10 @@ public class Plot.Axes : Object {
 			});
 		}
 		// Axes
-		list_box[0].add (create_boolean_box ("Visible", &_visible, redraw));
-		list_box[0].add (create_color_box ("Line color", &_color));
-		
+		list_box[0].add (create_box_with_switch ("Visible", &_visible, redraw));
+		list_box[0].add (create_box_with_color_btn ("Line color", &_color));
 		// Ticks
-		var combo_box_label = new Gtk.Label ("Tick type");
-		combo_box_label.halign = Gtk.Align.START;
-		combo_box_label.margin_start = 15;
-		
 		var combo_box = new Gtk.ComboBoxText ();
-		combo_box.halign = Gtk.Align.END;
-		combo_box.margin_end = 15;
 		for (var i = 0; i < 4; i++) {
 			combo_box.append (i.to_string (), ((TickType) i).to_string ());
 			combo_box.active = (int) tick_type;
@@ -233,12 +226,9 @@ public class Plot.Axes : Object {
 				if (redraw != null) redraw ();
 			});
 		}
-		var combo_box_container = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		combo_box_container.pack_start (combo_box_label);
-		combo_box_container.pack_start (combo_box);
-		
-		list_box[1].add (combo_box_container);
-		list_box[1].add (create_spin_box_int ("Major tick", &_major_tick, 2, 100, 1, redraw));
+		list_box[1].add (create_box_with_combo_box ("Tick type", combo_box, redraw));
+		list_box[1].add (create_box_with_spin_btn_int ("Major tick", &_major_tick, 2, 100, 1, redraw));
+		list_box[1].add (create_box_with_spin_btn_int ("Minor tick", &_minor_tick, 0, 100, 1, redraw));
 		// Add to box
 		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
 		Gtk.Frame frame;

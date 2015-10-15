@@ -1,7 +1,7 @@
 namespace Plot {
 	const int mm = 10;
 	const int cm = 10*mm;
-	
+
 	public delegate void RedrawFunc ();
 
 	public enum ShapeType {
@@ -19,7 +19,7 @@ namespace Plot {
 			y = double.parse (array[1]);
 		}
 	}
-	public Gtk.Box create_color_box (string title, Gdk.RGBA* color) {
+	public Gtk.Box create_box_with_color_btn (string title, Gdk.RGBA* color) {
 		var label = new Gtk.Label (title);
 		label.halign = Gtk.Align.START;
 		label.margin_start = 15;
@@ -36,7 +36,7 @@ namespace Plot {
 		box.pack_start (button);
 		return box;
 	}
-	public Gtk.Box create_spin_box_int (string title, int* parameter, double min, double max, double step, RedrawFunc redraw) {
+	public Gtk.Box create_box_with_spin_btn_int (string title, int* parameter, double min, double max, double step, RedrawFunc redraw) {
 		var label = new Gtk.Label (title);
 		label.halign = Gtk.Align.START;
 		label.margin_start = 15;
@@ -55,7 +55,7 @@ namespace Plot {
 		box.pack_start (spin_button);
 		return box;
 	}
-	public Gtk.Box create_spin_box_double (string title, double* parameter, double min, double max, double step, RedrawFunc redraw) {
+	public Gtk.Box create_box_with_spin_btn_double (string title, double* parameter, double min, double max, double step, RedrawFunc redraw) {
 		var label = new Gtk.Label (title);
 		label.halign = Gtk.Align.START;
 		label.margin_start = 15;
@@ -74,11 +74,11 @@ namespace Plot {
 		box.pack_start (spin_button);
 		return box;
 	}
-	public Gtk.Box create_boolean_box (string title, bool* parameter, RedrawFunc redraw) {
+	public Gtk.Box create_box_with_switch (string title, bool* parameter, RedrawFunc redraw) {
 		var label = new Gtk.Label (title);
 		label.halign = Gtk.Align.START;
 		label.margin_start = 15;
-		
+
 		var @switch = new Gtk.Switch ();
 		@switch.halign = Gtk.Align.END;
 		@switch.margin_end = 15;
@@ -95,6 +95,19 @@ namespace Plot {
 		var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
 		box.pack_start (label);
 		box.pack_start (@switch);
+		return box;
+	}
+	public Gtk.Box create_box_with_combo_box (string title, Gtk.ComboBox combo_box, RedrawFunc redraw) {
+		var label = new Gtk.Label (title);
+		label.halign = Gtk.Align.START;
+		label.margin_start = 15;
+
+		combo_box.halign = Gtk.Align.END;
+		combo_box.margin_end = 15;
+
+		var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		box.pack_start (label);
+		box.pack_start (combo_box);
 		return box;
 	}
 }

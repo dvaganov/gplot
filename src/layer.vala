@@ -174,17 +174,17 @@ public class Plot.Layer : Object {
 			});
 		}
 		// General
-		list_box[0].add (create_color_box ("Background color", &_color_background));
-		list_box[0].add (create_color_box ("Border color", &_color_border));
-		list_box[0].add (create_spin_box_int ("Width, px", &_width, 0, 10000, 10, redraw));
-		list_box[0].add (create_spin_box_int ("Height, px", &_height, 0, 10000, 10, redraw));
+		list_box[0].add (create_box_with_color_btn ("Background color", &_color_background));
+		list_box[0].add (create_box_with_color_btn ("Border color", &_color_border));
+		list_box[0].add (create_box_with_spin_btn_int ("Width, px", &_width, 0, 10000, 10, redraw));
+		list_box[0].add (create_box_with_spin_btn_int ("Height, px", &_height, 0, 10000, 10, redraw));
 		// Position
-		list_box[1].add (create_spin_box_double ("Left, px", &_top_left_point.x, 0, 10000, 10, redraw));
-		list_box[1].add (create_spin_box_double ("Top, px", &_top_left_point.y, 0, 10000, 10, redraw));
+		list_box[1].add (create_box_with_spin_btn_double ("Left, px", &_top_left_point.x, 0, 10000, 10, redraw));
+		list_box[1].add (create_box_with_spin_btn_double ("Top, px", &_top_left_point.y, 0, 10000, 10, redraw));
 		// Margins
 		string margin_names[4] = {"Left", "Right", "Bottom", "Top"};
 		for (var i = 0; i < margin.length; i++) {
-			list_box[2].add (create_spin_box_int (margin_names[i], &_margin[i], 0, 10000, 10, redraw));
+			list_box[2].add (create_box_with_spin_btn_int (margin_names[i], &_margin[i], 0, 10000, 10, redraw));
 		}
 		// Add to box
 		var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);

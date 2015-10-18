@@ -38,7 +38,6 @@ public class Plot.Layer : Object {
 		// Inner calculations
 		shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
 		scale = {(width - margin[0] - margin[1]) / units.x, (height - margin[2] - margin[3]) / units.y};
-		notify.connect (notify_cb);
 	}
 	public Layer.from_file (KeyFile file, int id) {
 		group_name = @"Layer:0:$id";
@@ -72,7 +71,6 @@ public class Plot.Layer : Object {
 				}
 			}
 		}
-		notify.connect (notify_cb);
 	}
 	public void save_to_file (KeyFile file) {
 		file.set_string (group_name, "color_background", color_background.to_string ());
@@ -102,6 +100,7 @@ public class Plot.Layer : Object {
 				break;
 		}
 		children.get (children.length - 1).recalculate_points (shift, scale);
+		redraw ();
 	}
 	public void draw (Cairo.Context cr) {
 		// Draw background and border
@@ -135,6 +134,16 @@ public class Plot.Layer : Object {
 			axes[i].draw (cr);
 		}
 		// Draw shapes
+		Point new_scale, new_shift;
+		new_shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
+		new_scale = {(width - margin[0] - margin[1]) / units.x, (height - margin[2] - margin[3]) / units.y};
+		if (scale != new_scale || shift != new_shift) {
+		    scale = new_scale;
+		    shift = new_shift;
+		    for (int i = 0; i < children.length; i++) {
+					children.get (i).recalculate_points (shift, scale);
+				}
+		}
 		for (int i = 0; i < children.length; i++) {
 			children.get (i).draw (cr);
 		}
@@ -144,20 +153,6 @@ public class Plot.Layer : Object {
 			if (children.get (i).is_selected) {
 				children.get (i).transform (widget, event);
 			}
-		}
-	}
-	private void notify_cb (GLib.ParamSpec pspec) {
-		switch (pspec.get_name ()) {
-			case "top-left-point":
-			case "width":
-			case "height":
-			case "margin":
-				shift = {top_left_point.x - priv_start_point.x + margin[0], top_left_point.y - priv_start_point.y + margin[3]};
-				scale = {(width - margin[0] - margin[1]) / units.x, (height - margin[2] - margin[3]) / units.y};
-				for (int i = 0; i < children.length; i++) {
-					children.get (i).recalculate_points (shift, scale);
-				}
-				break;
 		}
 	}
 	public void settings (Gtk.Stack stack) {

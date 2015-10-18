@@ -162,5 +162,8 @@ public class Plot.View : Gtk.DrawingArea {
 		scroll.add (box);
 
 		stack.add_titled (scroll, "background", "Background");
+		for (var i = 0; i < layers.length; i++) {
+			layers.get (i).settings (stack);
+		}
 	}
 }

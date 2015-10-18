@@ -1,7 +1,3 @@
-using GLib;
-using Cairo;
-using Plot;
-
 public class Plot.Curve : Plot.Shapes {
 	private int radius_control_point {get; set; default = mm / 2;}
 

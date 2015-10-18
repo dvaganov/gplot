@@ -1,7 +1,3 @@
-using GLib;
-using Cairo;
-using Plot;
-
 public class Plot.Scatters : Plot.Shapes {
 	public enum Form {
 		NONE,
@@ -59,7 +55,7 @@ public class Plot.Scatters : Plot.Shapes {
 		file.set_string (group_name, "color_line", color_line.to_string ());
 		file.set_integer (group_name, "size", size);
 	}
-	public override void draw (Context cr) {
+	public override void draw (Cairo.Context cr) {
 		cr.save ();
 		Gdk.cairo_set_source_rgba (cr, color_scatters);
 		switch (form) {

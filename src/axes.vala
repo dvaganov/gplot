@@ -1,6 +1,3 @@
-using GLib;
-using Cairo;
-
 public class Plot.Axes : Object {
 	public enum Orientation {
 		LEFT, RIGHT, BOTTOM, TOP;

@@ -5,83 +5,103 @@ public class Plot.Window : Gtk.ApplicationWindow {
 		plot_view = new View ();
 		create_actions ();
 
-		// Header bar
-		var btn_save = new Gtk.Button.from_icon_name ("document-save-symbolic");
-		btn_save.halign = Gtk.Align.CENTER;
-		btn_save.action_name = "win.save";
-
-		var btn_open = new Gtk.Button.from_icon_name ("document-open-symbolic");
-		btn_open.halign = Gtk.Align.CENTER;
-		btn_open.action_name = "win.open";
-
-		var btn_export = new Gtk.Button.from_icon_name ("document-save-as-symbolic");
-		btn_export.halign = Gtk.Align.CENTER;
-		btn_export.action_name = "win.export";
-
-		var box_btn = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
-		box_btn.get_style_context ().add_class ("linked");
-		box_btn.pack_start (btn_save);
-		box_btn.pack_start (btn_open);
-		box_btn.pack_start (btn_export);
-
-		// Plot view
-		var plot_view_parameters_stack = new Gtk.Stack ();
-		plot_view_parameters_stack.expand = true;
-		plot_view_parameters_stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
-
-		var plot_view_parameters_sidebar = new Gtk.StackSidebar ();
-		plot_view_parameters_sidebar.stack = plot_view_parameters_stack;
-
-		var plot_view_parameters_sidebar_frame = new Gtk.Frame (null);
-		plot_view_parameters_sidebar_frame.shadow_type = Gtk.ShadowType.IN;
-		plot_view_parameters_sidebar_frame.expand = true;
-//		plot_view_parameters_sidebar_frame.valign = Gtk.Align.START;
-//		plot_view_parameters_sidebar_frame.height_request = 100;
-		plot_view_parameters_sidebar_frame.add (plot_view_parameters_sidebar);
-
-		var plot_view_parameters_grid = new Gtk.Grid ();
-		plot_view_parameters_grid.expand = false;
-		plot_view_parameters_grid.width_request = 300;
-		plot_view_parameters_grid.margin = 15;
-		plot_view_parameters_grid.row_spacing = 15;
-		plot_view_parameters_grid.attach (plot_view_parameters_sidebar_frame, 0, 0);
-		plot_view_parameters_grid.attach (plot_view_parameters_stack, 0, 1);
-
-		var plot_view_scroll = new Gtk.ScrolledWindow (null, null);
-		plot_view_scroll.expand = true;
-		plot_view_scroll.min_content_width = 400;
-		plot_view_scroll.min_content_height = 400;
-		plot_view_scroll.add (plot_view);
-
-		var plot_view_grid = new Gtk.Grid ();
-		plot_view_grid.attach (plot_view_parameters_grid, 0, 0);
-		plot_view_grid.attach (plot_view_scroll, 1, 0);
-
-		plot_view.settings (plot_view_parameters_stack);
-		for (var i = 0; i < plot_view.layers.length; i++) {
-			plot_view.layers.get (i).settings (plot_view_parameters_stack);
-		}
-		
-
-		// Table view
-		var table_view_grid = new Gtk.Grid ();
-
 		// Window
-		var stack = new Gtk.Stack ();
-		stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
+		var win_stack = new Gtk.Stack ();
+		win_stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
+		add (win_stack);
 
 		var stack_switcher = new Gtk.StackSwitcher ();
-		stack_switcher.stack = stack;
-		stack.add_titled (plot_view_grid, "plot", "Plot view");
-		stack.add_titled (table_view_grid, "table", "Table view");
+		stack_switcher.stack = win_stack;
 
 		var header_bar = new Gtk.HeaderBar ();
 		header_bar.show_close_button = true;
-		header_bar.pack_start (box_btn);
 		header_bar.custom_title = stack_switcher;
-
 		set_titlebar (header_bar);
-		add (stack);
+
+		// Header bar
+		var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+		box.get_style_context ().add_class ("linked");
+		header_bar.pack_start (box);
+
+		var button = new Gtk.Button.from_icon_name ("document-save-symbolic");
+		button.halign = Gtk.Align.CENTER;
+		button.action_name = "win.save";
+		box.pack_start (button);
+
+		button = new Gtk.Button.from_icon_name ("document-open-symbolic");
+		button.halign = Gtk.Align.CENTER;
+		button.action_name = "win.open";
+		box.pack_start (button);
+
+		button = new Gtk.Button.from_icon_name ("document-save-as-symbolic");
+		button.halign = Gtk.Align.CENTER;
+		button.action_name = "win.export";
+		box.pack_start (button);
+
+		// Plot view
+		var grid = new Gtk.Grid ();
+		win_stack.add_titled (grid, "plot", "Plot view");
+        // Plot view - Parameters
+		var parameters_grid = new Gtk.Grid ();
+		parameters_grid.expand = false;
+		parameters_grid.width_request = 300;
+		parameters_grid.margin = 15;
+		parameters_grid.row_spacing = 15;
+		grid.attach (parameters_grid, 0, 0);
+
+		var frame = new Gtk.Frame (null);
+		frame.shadow_type = Gtk.ShadowType.IN;
+		frame.expand = true;
+		parameters_grid.attach (frame, 0, 0);
+
+		var side_bar = new Gtk.StackSidebar ();
+		frame.add (side_bar);
+
+		var stack = new Gtk.Stack ();
+		stack.expand = true;
+		stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
+		side_bar.stack = stack;
+		plot_view.settings (stack);
+		parameters_grid.attach (stack, 0, 1);
+
+        // Plot view - Plot
+		var scrolled_window = new Gtk.ScrolledWindow (null, null);
+		scrolled_window.expand = true;
+		scrolled_window.min_content_width = 400;
+		scrolled_window.min_content_height = 400;
+		scrolled_window.add (plot_view);
+		grid.attach (scrolled_window, 1, 0);
+
+        // Plot view - Adder
+		scrolled_window = new Gtk.ScrolledWindow (null, null);
+		scrolled_window.width_request = 300;
+		grid.attach (scrolled_window, 2, 0);
+
+		box = new Gtk.Box (Gtk.Orientation.VERTICAL, 15);
+		box.margin = 15;
+        scrolled_window.add (box);
+
+		button = new Gtk.Button.with_label ("Add curve");
+		button.clicked.connect ((widget) => {
+			plot_view.layers.get (0).add_shape (ShapeType.CURVE);
+		});
+		box.pack_start (button);
+
+		button = new Gtk.Button.with_label ("Add scatters");
+		button.clicked.connect ((widget) => {
+			plot_view.layers.get (0).add_shape (ShapeType.SCATTERS);
+		});
+		box.pack_start (button);
+
+		// Table view
+		grid = new Gtk.Grid ();
+		win_stack.add_titled (grid, "table", "Table view");
+
+		button = new Gtk.Button.with_label ("Import");
+		button.halign = button.valign = Gtk.Align.CENTER;
+		button.expand = true;
+		button.action_name = "win.import";
+		grid.attach (button, 0, 0);
 	}
 	private void create_actions () {
 		var simple_action = new GLib.SimpleAction ("save", null);
@@ -149,6 +169,33 @@ public class Plot.Window : Gtk.ApplicationWindow {
 				} else if (filename.has_suffix (".svg")) {
 					plot_view.export_to_svg (filename);
 				}
+			}
+			chooser.close ();
+		});
+		this.add_action (simple_action);
+
+		simple_action = new GLib.SimpleAction ("import", null);
+		simple_action.activate.connect (() => {
+			var chooser = new Gtk.FileChooserDialog (null, this, Gtk.FileChooserAction.OPEN, null);
+			chooser.add_button ("_Cancel", Gtk.ResponseType.CANCEL);
+			chooser.add_button ("_Open", Gtk.ResponseType.ACCEPT).get_style_context ().add_class ("suggested-action");
+			var filter = new Gtk.FileFilter ();
+			filter.set_filter_name ("CSV files");
+			filter.add_pattern ("*.csv");
+			chooser.add_filter (filter);
+			if (chooser.run () == Gtk.ResponseType.ACCEPT) {
+				var filename = chooser.get_filename ();
+				/*KeyFile file = new KeyFile ();
+				try {
+					file.load_from_file (filename, KeyFileFlags.NONE);
+				} catch (KeyFileError key_err) {
+					print (@"Load file: $(key_err.message)\n");
+				} catch (FileError err) {
+					print (@"Load file: $(err.message)\n");
+				}
+				file.set_list_separator ('=');
+				plot_view.open_file (file);*/
+				print (@"Recive $filename\n");
 			}
 			chooser.close ();
 		});

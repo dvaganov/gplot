@@ -1,31 +1,27 @@
-using GLib;
-using Cairo;
-using Plot;
-
 public class Plot.Curve : Plot.Shapes {
 	private int radius_control_point {get; set; default = mm / 2;}
 
 	public Gdk.RGBA color_curve {get; set;}
 	public Gdk.RGBA color_selection {get; set;}
 
-	public Curve (int parent_id, int id) {
+	public Curve (uint parent_id, uint id) {
 		this.id = id;
 		group_name = @"Curve:$parent_id:$id";
 		color_curve = {0,0,0,1};
 		color_selection = {1, 0.5, 0.5, 1};
-		points.append_val (Point () {x = 0*cm, y = 0*cm});
-		points.append_val (Point () {x = 0*cm, y = 4*cm});
-		points.append_val (Point () {x = 3*cm, y = 0*cm});
-		points.append_val (Point () {x = 3*cm, y = 4*cm});
+		points.add (Point () {x = 1*cm, y = 1*cm});
+		points.add (Point () {x = 0*cm, y = 1*cm});
+		points.add (Point () {x = 1*cm, y = 0*cm});
+		points.add (Point () {x = 1*cm, y = 1*cm});
 	}
-	public Curve.from_file (GLib.KeyFile file, int parent_id, int id) {
+	public Curve.from_file (GLib.KeyFile file, uint parent_id, uint id) {
 		group_name = @"Curve:$parent_id:$id";
 		try {
 			// From Shapes
 			is_selected = file.get_boolean (group_name, "is_selected");
 			var points_list = file.get_string_list (group_name, "points");
 			for (int i = 0; i < points_list.length; i++) {
-				points.append_val (Point.from_string (points_list[i]));
+				points.add (Point.from_string (points_list[i]));
 			}
 			scale = Point.from_string (file.get_string (group_name, "scale"));
 			shift = Point.from_string (file.get_string (group_name, "shift"));
@@ -41,7 +37,7 @@ public class Plot.Curve : Plot.Shapes {
 		file.set_boolean (group_name, "is_selected", is_selected);
 		string[] points_list = new string[points.length];
 		for (int i = 0; i < points.length; i++) {
-			points_list[i] = points.index(i).to_string ();
+			points_list[i] = points.get (i).to_string ();
 		}
 		file.set_string_list (group_name, "points", points_list);
 		file.set_string (group_name, "scale", scale.to_string ());
@@ -55,8 +51,8 @@ public class Plot.Curve : Plot.Shapes {
 		cr.save ();
 		Gdk.cairo_set_source_rgba (cr, color_curve);
 		cr.set_line_width (2);
-		cr.move_to (points.index (0).x, points.index (0).y);
-		cr.rel_curve_to (points.index (1).x, points.index (1).y, points.index (2).x, points.index (2).y, points.index (3).x, points.index (3).y);
+		cr.move_to (points.get (0).x, points.get (0).y);
+		cr.rel_curve_to (points.get (1).x, points.get (1).y, points.get (2).x, points.get (2).y, points.get (3).x, points.get (3).y);
 		cr.stroke ();
 		cr.restore ();
 
@@ -64,9 +60,9 @@ public class Plot.Curve : Plot.Shapes {
 			// Draw curve start and end points
 			cr.save ();
 			Gdk.cairo_set_source_rgba (cr, color_curve);
-			cr.arc (points.index (0).x, points.index (0).y, radius_control_point, 0, 2*Math.PI);
+			cr.arc (points.get (0).x, points.get (0).y, radius_control_point, 0, 2*Math.PI);
 			cr.fill ();
-			cr.arc (points.index (0).x + points.index (3).x, points.index (0).y + points.index (3).y, radius_control_point, 0, 2*Math.PI);
+			cr.arc (points.get (0).x + points.get (3).x, points.get (0).y + points.get (3).y, radius_control_point, 0, 2*Math.PI);
 			cr.fill ();
 			cr.restore ();
 			// Draw curve selection
@@ -74,27 +70,27 @@ public class Plot.Curve : Plot.Shapes {
 			Gdk.cairo_set_source_rgba (cr, color_selection);
 			cr.set_line_width (2);
 			cr.set_dash ({mm, 0.5*mm}, 0);
-			cr.move_to (points.index (0).x, points.index (0).y);
-			cr.rel_curve_to (points.index (1).x, points.index (1).y, points.index (2).x, points.index (2).y, points.index (3).x, points.index (3).y);
+			cr.move_to (points.get (0).x, points.get (0).y);
+			cr.rel_curve_to (points.get (1).x, points.get (1).y, points.get (2).x, points.get (2).y, points.get (3).x, points.get (3).y);
 			cr.stroke ();
-			cr.arc (points.index (0).x, points.index (0).y, radius_control_point, 0, 2*Math.PI);
+			cr.arc (points.get (0).x, points.get (0).y, radius_control_point, 0, 2*Math.PI);
 			cr.stroke ();
-			cr.arc (points.index (0).x + points.index (3).x, points.index (0).y + points.index (3).y, 0.5*radius_control_point, 0, 2*Math.PI);
+			cr.arc (points.get (0).x + points.get (3).x, points.get (0).y + points.get (3).y, 0.5*radius_control_point, 0, 2*Math.PI);
 			cr.fill ();
 			cr.restore ();
 			// Draw controls
 			cr.save ();
 			Gdk.cairo_set_source_rgba (cr, color_selection);
 			cr.set_line_width (1);
-			cr.move_to (points.index (0).x, points.index (0).y);
-			cr.rel_line_to (points.index (1).x, points.index (1).y);
+			cr.move_to (points.get (0).x, points.get (0).y);
+			cr.rel_line_to (points.get (1).x, points.get (1).y);
 			cr.stroke ();
-			cr.arc (points.index (0).x + points.index (1).x, points.index (0).y + points.index (1).y, radius_control_point, 0, 2*Math.PI);
+			cr.arc (points.get (0).x + points.get (1).x, points.get (0).y + points.get (1).y, radius_control_point, 0, 2*Math.PI);
 			cr.fill ();
-			cr.move_to (points.index (0).x + points.index (3).x, points.index (0).y + points.index (3).y);
-			cr.line_to (points.index (0).x + points.index (2).x, points.index (0).y + points.index (2).y);
+			cr.move_to (points.get (0).x + points.get (3).x, points.get (0).y + points.get (3).y);
+			cr.line_to (points.get (0).x + points.get (2).x, points.get (0).y + points.get (2).y);
 			cr.stroke ();
-			cr.arc (points.index (0).x + points.index (2).x, points.index (0).y + points.index (2).y, 5, 0, 2*Math.PI);
+			cr.arc (points.get (0).x + points.get (2).x, points.get (0).y + points.get (2).y, 5, 0, 2*Math.PI);
 			cr.fill ();
 		}
 	}
@@ -102,19 +98,19 @@ public class Plot.Curve : Plot.Shapes {
 		double x, y; // For position
 		Point rel = {0, 0}; // For motion
 		for (int i = 0; i < points.length; i++) {
-			x = points.index (i).x;
-			y = points.index (i).y;
+			x = points.get (i).x;
+			y = points.get (i).y;
 			if (i != 0) {
-				x += points.index (0).x;
-				y += points.index (0).y;
-				rel.x = points.index (0).x;
-				rel.y = points.index (0).y;
+				x += points.get (0).x;
+				y += points.get (0).y;
+				rel.x = points.get (0).x;
+				rel.y = points.get (0).y;
 			}
 			if (x + radius_control_point > event.x && event.x > x - radius_control_point &&
 				y + radius_control_point > event.y && event.y > y - radius_control_point) {
 				motion_handler_id = widget.motion_notify_event.connect ((motion_event) => {
-					points.index (i).x = motion_event.x - rel.x;
-					points.index (i).y = motion_event.y - rel.y;
+					points.get (i).x = motion_event.x - rel.x;
+					points.get (i).y = motion_event.y - rel.y;
 					widget.queue_draw ();
 					return true;
 				});
@@ -124,18 +120,18 @@ public class Plot.Curve : Plot.Shapes {
 	}
 	public override void recalculate_points (Point shift, Point scale) {
 		// Because of relative curve
-		points.index (0).x -= this.shift.x;
-		points.index (0).y -= this.shift.y;
+		points.get (0).x -= this.shift.x;
+		points.get (0).y -= this.shift.y;
 		for (int i = 0; i < points.length; i++) {
 			// Restore data points
-			points.index (i).x /= this.scale.x;
-			points.index (i).y /= this.scale.y;
+			points.get (i).x /= this.scale.x;
+			points.get (i).y /= this.scale.y;
 			// Transform data
-			points.index (i).x *= scale.x;
-			points.index (i).y *= scale.y;
+			points.get (i).x *= scale.x;
+			points.get (i).y *= scale.y;
 		}
-		points.index (0).x += shift.x;
-		points.index (0).y += shift.y;
+		points.get (0).x += shift.x;
+		points.get (0).y += shift.y;
 		// Save new transformation parameters
 		this.shift = shift;
 		this.scale = scale;

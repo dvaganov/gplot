@@ -1,7 +1,3 @@
-using GLib;
-using Cairo;
-using Plot;
-
 public abstract class Plot.Shapes : GLib.Object {
 	public uint id {get; protected set;}
 	public uint parent_id {get; protected set;}
@@ -14,7 +10,7 @@ public abstract class Plot.Shapes : GLib.Object {
 	public abstract void save_to_file (KeyFile file);
 	public abstract void transform (Gtk.Widget widget, Gdk.EventButton event);
 	public abstract void draw (Cairo.Context cr);
-	
+
 	public virtual void recalculate_points (Point shift, Point scale) {
 		for (var i = 0; i < points.length; i++) {
 			// Restore data points

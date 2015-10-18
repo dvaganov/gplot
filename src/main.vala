@@ -1,5 +1,3 @@
-using Gtk;
-
 public class Plot.App : Gtk.Application {
 	public App (string[] args) {
 		Object(application_id: "home.dvaganov.gplot");

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkListStore" id="data_model">
+    <columns>
+      <!-- column-name data -->
+      <column type="GObject"/>
+    </columns>
+  </object>
+  <template class="GplotDataView" parent="GtkTreeView">
+    <property name="width_request">150</property>
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="model">data_model</property>
+    <property name="reorderable">True</property>
+    <property name="enable_search">False</property>
+    <property name="show_expanders">False</property>
+    <property name="enable_grid_lines">both</property>
+    <property name="activate_on_single_click">True</property>
+    <signal name="button-press-event" handler="onButtonPress" swapped="no"/>
+    <child internal-child="selection">
+      <object class="GtkTreeSelection"/>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="column_id">
+        <property name="sizing">autosize</property>
+        <child>
+          <object class="GtkCellRendererText" id="cell_id">
+            <property name="cell_background_rgba">rgb(243,243,243)</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="column_values">
+        <property name="clickable">True</property>
+        <property name="alignment">0.5</property>
+        <signal name="clicked" handler="onTitlePress" swapped="no"/>
+        <child>
+          <object class="GtkCellRendererText" id="cell_value">
+            <property name="xalign">1</property>
+            <property name="editable">True</property>
+            <signal name="edited" handler="onCellEdited" swapped="no"/>
+          </object>
+        </child>
+      </object>
+    </child>
+  </template>
+  <object class="GtkMenu" id="menu">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkMenuItem">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">column.add</property>
+        <property name="label" translatable="yes">Add</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">column.delete</property>
+        <property name="label" translatable="yes">Delete</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">column.add-above</property>
+        <property name="label" translatable="yes">Add above</property>
+        <property name="use_underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="action_name">column.add-below</property>
+        <property name="label" translatable="yes">Add below</property>
+      </object>
+    </child>
+  </object>
+  <object class="GtkPopover" id="popover_rename">
+    <property name="can_focus">False</property>
+    <property name="position">bottom</property>
+    <child>
+      <object class="GtkEntry" id="entry_rename">
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <signal name="activate" handler="onTitleChanged" swapped="no"/>
+      </object>
+    </child>
+  </object>
+</interface>

@@ -1,7 +1,28 @@
-SRC = src/main.vala src/window.vala src/view.vala src/shapes.vala src/layer.vala src/axes.vala src/namespace.vala src/curve.vala src/scatters.vala
-PKG = --pkg gtk+-3.0
+PROG_NAME = gplot
 
-all: gplot
+SOURCE_DIR = src
+DATA_DIR = $(SOURCE_DIR)/data
+RESOURCE_NAME = $(DATA_DIR)/$(PROG_NAME).gresource.xml
 
-gplot: $(SRC)
-	valac $(PKG) -o gplot $(SRC)
+SRC = \
+$(shell find $(SOURCE_DIR)/ -type f -name '*.vala') \
+$(DATA_DIR)/$(PROG_NAME).c
+
+all:
+	make $(PROG_NAME)
+	make clean
+
+$(DATA_DIR)/$(PROG_NAME).c: $(RESOURCE_NAME)
+	cd $(DATA_DIR)/ && \
+	glib-compile-resources --generate-source $(PROG_NAME).gresource.xml
+
+clean:
+	find ./ -type f -name *.c -delete
+
+$(PROG_NAME): $(SRC)
+	valac \
+	--cc=clang \
+	--target-glib=2.38 \
+	--gresources $(RESOURCE_NAME) \
+	--pkg gtk+-3.0 $(SRC) \
+	-o $(PROG_NAME)

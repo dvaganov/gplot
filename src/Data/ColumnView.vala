@@ -2,9 +2,9 @@ using GLib;
 using Gtk;
 
 [GtkTemplate (ui = "/org/gplot/table.ui")]
-public class Gplot.DataView : TreeView
+public class Gplot.ColumnView : TreeView
 {
-	protected Data _data;
+	protected Column _column;
 	protected SimpleActionGroup _action_group;
 
 	[GtkChild]
@@ -32,9 +32,9 @@ public class Gplot.DataView : TreeView
 		default = "%.2f";
 	}
 
-	public DataView(Data data)
+	public ColumnView(Column column)
 	{
-		this._data = data;
+		this._column = column;
 		this.menu.attach_widget = this;
 		this.setupActions();
 
@@ -57,7 +57,7 @@ public class Gplot.DataView : TreeView
 				Object obj;
 				tree_model.get(iter, 0, out obj);
 
-				var row = obj as DataString;
+				var row = obj as Cell;
 				cell_text.text = row.getString("%.2f");
 			}
 		);
@@ -74,7 +74,7 @@ public class Gplot.DataView : TreeView
 	public void insert(int position = -1)
 	{
 		Gtk.TreeIter iter;
-		var row = this._data.insertItem(position);
+		var row = this._column.insert(position);
 		print(this.title + ": insert()\n");
 		var model = this.model as Gtk.ListStore;
 
@@ -90,7 +90,7 @@ public class Gplot.DataView : TreeView
 		var model = this.model as Gtk.ListStore;
 		var row_index = int.parse(model.get_string_from_iter(iter));
 
-		this._data.remove(row_index);
+		this._column.remove(row_index);
 		model.remove(iter);
 	}
 
@@ -137,7 +137,7 @@ public class Gplot.DataView : TreeView
 
 		model.get_iter_from_string(out iter, path);
 
-		this._data.getItem(index).setString(new_text);
+		this._column.getCell(index).setString(new_text);
 
 		if (model.iter_next(ref iter)) {
 			this.set_cursor(model.get_path(iter), null, true);
@@ -193,11 +193,11 @@ public class Gplot.DataView : TreeView
 
 	public void syncData()
 	{
-		for (var i = 0; i < this._data.length; i++) {
+		for (var i = 0; i < this._column.length; i++) {
 			Gtk.TreeIter iter;
 			var model = this.model as Gtk.ListStore;
 			model.append(out iter);
-			model.set(iter, 0, this._data.getItem(i));
+			model.set(iter, 0, this._column.getCell(i));
 		}
 	}
 }

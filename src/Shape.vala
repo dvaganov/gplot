@@ -6,8 +6,8 @@ public abstract class Gplot.Shape : Element
 {
 	protected Layer _parent;
 
-	protected Data? _x;
-	protected Data? _y;
+	protected Column? _x;
+	protected Column? _y;
 
 	public Layer getParent()
 	{
@@ -20,25 +20,25 @@ public abstract class Gplot.Shape : Element
 		return this;
 	}
 
-	public Data getX()
+	public Column getX()
 	{
 		return this._x;
 	}
 
-	public Data getY()
+	public Column getY()
 	{
 		return this._y;
 	}
 
-	public Shape setX(Data? data)
+	public Shape setX(Column? column)
 	{
-		this._x = data;
+		this._x = column;
 		return this;
 	}
 
-	public Shape setY(Data? data)
+	public Shape setY(Column? column)
 	{
-		this._y = data;
+		this._y = column;
 		return this;
 	}
 

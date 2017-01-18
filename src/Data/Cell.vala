@@ -1,10 +1,10 @@
 using GLib;
 
-public class Gplot.DataItem : Object, DataString
+public class Gplot.Cell : Object
 {
 	protected double? _val;
 
-	public DataItem(double? val = null)
+	public Cell(double? val = null)
 	{
 		this._val = val;
 	}
@@ -14,7 +14,7 @@ public class Gplot.DataItem : Object, DataString
 		return (this._val != null) ? format.printf((double) this._val) : "";
 	}
 
-	public DataString setString(string s_val)
+	public Cell setString(string s_val)
 	{
 		double? d_val;
 		this._val = (double.try_parse(s_val, out d_val) && s_val != "") ? d_val : null;
@@ -26,7 +26,7 @@ public class Gplot.DataItem : Object, DataString
 		return this._val;
 	}
 
-	public DataItem setValue(double? val)
+	public Cell setValue(double? val)
 	{
 		this._val = val;
 		return this;

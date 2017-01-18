@@ -12,8 +12,6 @@ public class Gplot.App : Gtk.Application
 		var builder = new Builder.from_resource("/org/gplot/window.ui");
 		var win = builder.get_object("window") as ApplicationWindow;
 
-		win.set_titlebar(builder.get_object("header_bar") as Widget);
-
 		var data_manager = new DataManager();
 		data_manager.newData("x").addValue(10).addValue(200);
 		data_manager.newData("y").addValue(200).addValue(30);

@@ -22,7 +22,7 @@ public class Gplot.ColumnView : TreeView
 	{
 		set;
 		get;
-		default = "Values";
+		default = "Column";
 	}
 
 	public string precise
@@ -35,6 +35,7 @@ public class Gplot.ColumnView : TreeView
 	public ColumnView(Column column)
 	{
 		this._column = column;
+		this.title = column.getName();
 		this.menu.attach_widget = this;
 		this.setupActions();
 
@@ -152,38 +153,31 @@ public class Gplot.ColumnView : TreeView
 	protected void setupActions()
 	{
 		this._action_group = new SimpleActionGroup();
-
-		this._action_group = new SimpleActionGroup();
 		this.insert_action_group("column", this._action_group);
 
-		var action = new GLib.SimpleAction("add", null);
-		action.activate.connect(
-			() => {
-				this.insert();
-			}
-		);
+		// Action: add row to column
+		var action = new SimpleAction("add", null);
+		action.activate.connect(() => {
+			this.insert();
+		});
 		this._action_group.add_action(action);
 
 		action = new GLib.SimpleAction("add-above", null);
-		action.activate.connect(
-			() => {
-				TreeIter iter;
-				this.get_selection().get_selected(null, out iter);
+		action.activate.connect(() => {
+			TreeIter iter;
+			this.get_selection().get_selected(null, out iter);
 
-				this.insert(int.parse(this.model.get_string_from_iter(iter)));
-			}
-		);
+			this.insert(int.parse(this.model.get_string_from_iter(iter)));
+		});
 		this._action_group.add_action(action);
 
 		action = new GLib.SimpleAction("add-below", null);
-		action.activate.connect(
-			() => {
-				TreeIter iter;
-				this.get_selection().get_selected(null, out iter);
+		action.activate.connect(() => {
+			TreeIter iter;
+			this.get_selection().get_selected(null, out iter);
 
-				this.insert(int.parse(this.model.get_string_from_iter(iter)) + 1);
-			}
-		);
+			this.insert(int.parse(this.model.get_string_from_iter(iter)) + 1);
+		});
 		this._action_group.add_action(action);
 
 		action = new GLib.SimpleAction("delete", null);

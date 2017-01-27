@@ -1,53 +1,34 @@
 using GLib;
+using Gee;
 
 public class Gplot.ColumnManager : Object
 {
-	protected GenericArray<Column> _columns;
-	protected GenericArray<ColumnView> _views;
-	protected GenericArray<string?> _id;
+	protected HashMap<uint, Column> _columns_gee;
+	protected HashMap<string, uint> _columnsNames;
 
 	public ColumnManager()
 	{
-		this._columns = new GenericArray<Column>();
-		this._views = new GenericArray<ColumnView>();
-		this._id = new GenericArray<string?>();
+		this._columns_gee = new HashMap<uint, Column>();
+		this._columnsNames = new HashMap<string, uint>();
 	}
 
 	public string?[] listColumns()
 	{
-		return this._id.data;
+		return this._columnsNames.keys.to_array();
 	}
 
-	public ColumnView getColumnView(string id)
+	public Column getColumn(string name)
 	{
-		var view = this._views.get(this.searchColumn(id));
-
-		if (view != null) {
-			view.syncData();
-			view.insert();
-		}
-
-		return view;
-	}
-
-	public Column getColumn(string id)
-	{
-		return this._columns.get(this.searchColumn(id));
+		var columnID = this._columnsNames.get(name);
+		return this._columns_gee.get(columnID);
 	}
 
 	public Column addColumn(string? id = null, double?[]? values = null)
 	{
-		// Default column id is equal to length of entries + 1
-		id = (id == null) ? (this._id.length + 1).to_string() : id;
-
 		var column = new Column();
-		var data_view = new ColumnView(column);
 
-		data_view.title = id;
-
-		this._columns.add(column);
-		this._views.add(data_view);
-		this._id.add(id);
+		this._columns_gee.set(column.getID(), column);
+		this._columnsNames.set(column.getName(), column.getID());
 
 		if (values != null) {
 			for (var i = 0; i < values.length; i++) {
@@ -56,16 +37,5 @@ public class Gplot.ColumnManager : Object
 		}
 
 		return column;
-	}
-
-	protected int searchColumn(string id)
-	{
-		var i = 0;
-		for (i = 0; i < this._id.length; i++) {
-			if (id == this._id.get(i)) {
-				break;
-			}
-		}
-		return i;
 	}
 }

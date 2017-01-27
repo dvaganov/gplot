@@ -2,6 +2,11 @@ using GLib;
 
 public class Gplot.Column : Object
 {
+	protected static uint columnID = 1;
+
+	protected uint _id;
+	protected string _name;
+	protected ColumnView _widget;
 	protected GenericArray<Cell> _values;
 
 	public int length
@@ -14,7 +19,27 @@ public class Gplot.Column : Object
 
 	public Column()
 	{
+		this._id = Column.columnID++;
+		this._name = "Column" + this._id.to_string();
+		this._widget = new ColumnView(this);
 		this._values = new GenericArray<Cell>();
+	}
+
+	public uint getID()
+	{
+		return this._id;
+	}
+
+	public string getName()
+	{
+		return this._name;
+	}
+
+	public ColumnView getWidget()
+	{
+		this._widget.syncData();
+		this._widget.insert();
+		return this._widget;
 	}
 
 	public Column addValue(double? val = null)

@@ -22,7 +22,8 @@ clean:
 $(PROG_NAME): $(SRC)
 	valac \
 	--cc=clang \
-	--target-glib=2.38 \
+	--target-glib=2.50 \
 	--gresources $(RESOURCE_NAME) \
+	--pkg gee-0.8 \
 	--pkg gtk+-3.0 $(SRC) \
 	-o $(PROG_NAME)
